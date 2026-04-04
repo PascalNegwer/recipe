@@ -1,52 +1,150 @@
-# Vue.js Recipe Manager with Google Drive
+# 🍳 Recipe Manager with Dropbox
 
-This is a Vue.js application that allows you to store and manage recipes as JSON files on Google Drive.
+A Vue.js application that allows you to store and manage recipes as JSON files on Dropbox. Features OAuth 2.0 authentication, offline caching, and automatic syncing.
 
-## Prerequisites
+## ✨ Features
 
-- Docker and Docker Compose installed on your system.
-- A Google Cloud project with Google Drive API enabled.
+- 🔐 Secure OAuth 2.0 authentication with Dropbox
+- 📱 Responsive design for mobile and desktop
+- 🔄 Smart syncing (24-hour intervals + on-demand)
+- 🏷️ Recipe tagging and search
+- 💾 Local caching for offline access
+- 🚀 Deployable to GitHub Pages
 
-## Setup Google Drive API
+## 🚀 Quick Start (Development)
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new project or select an existing one.
-3. Enable the Google Drive API.
-4. Create OAuth 2.0 credentials (Client ID for web application).
-5. Add your domain (e.g., `http://localhost:5173`) to authorized origins.
-6. Create an API key.
+### Prerequisites
+- Node.js 18+ and npm
+- OR Docker and Docker Compose
 
-## Configuration
+### Local Development
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/recipe.git
+cd recipe
 
-Update `src/App.vue` with your actual `CLIENT_ID` and `API_KEY`:
+# Install dependencies
+npm install
 
-```javascript
-const CLIENT_ID = 'your-client-id.apps.googleusercontent.com'
-const API_KEY = 'your-api-key'
+# Start development server
+npm run dev
 ```
 
-## Getting Started
+### Docker Development
+```bash
+# Build and run with Docker
+docker compose up
+```
 
-1. Clone or navigate to the project directory.
+## 🔧 Dropbox Setup
 
-2. Build and run the application:
-   ```
-   docker-compose up
-   ```
+### 1. Create Dropbox App
+1. Visit [Dropbox Developers](https://www.dropbox.com/developers/apps)
+2. Click "Create app"
+3. Choose "Scoped app" → "Full Dropbox"
+4. Name your app (e.g., "Recipe Manager")
+5. Click "Create app"
 
-3. Open your browser and navigate to `http://localhost:5173`.
+### 2. Configure Permissions
+In your app settings:
+- Go to **Permissions** tab
+- Enable: `files.content.read`, `files.content.write`, `files.metadata.read`
 
-4. Sign in with your Google account to access Google Drive.
+### 3. Set Redirect URI
+In **Settings** tab:
+- Add redirect URI: `https://yourusername.github.io/recipe/oauth/callback`
+- Replace `yourusername` with your GitHub username
 
-## Features
+### 4. Get App Key
+- Copy your **App key** from the Settings tab
+- This is your `CLIENT_ID`
 
-- Add new recipes with name, ingredients, and instructions.
-- Save recipes as JSON files to Google Drive.
-- Load and view existing recipes from Google Drive.
+## 🌐 GitHub Pages Deployment
 
-## Building for Production
+### Automatic Deployment (Recommended)
+1. Push your code to GitHub
+2. Go to your repo → **Settings** → **Pages**
+3. Set source to "GitHub Actions"
+4. The workflow will automatically deploy on pushes to `main`
 
-To build the project for production:
+### Manual Deployment
+```bash
+# Build for production
+npm run build
+
+# Deploy to gh-pages branch
+npm run deploy
+```
+
+## 📱 Usage
+
+1. **First Visit**: Enter your Dropbox App Key
+2. **Authentication**: Click "Connect to Dropbox" → Authorize the app
+3. **Add Recipes**: Fill in name, ingredients, instructions, and tags
+4. **Search & Filter**: Use the search bar or click tags to filter
+5. **Sync**: Click "Sync with Dropbox" for manual full sync
+
+## 🏗️ Project Structure
+
+```
+src/
+├── composables/
+│   └── useDropboxAPI.js    # Dropbox OAuth & API calls
+├── stores/
+│   └── recipes.js          # Pinia store for state management
+├── App.vue                 # Main application component
+└── main.js                 # Vue app entry point
+
+public/
+├── 404.html               # SPA routing for GitHub Pages
+└── favicon.ico
+
+.github/
+└── workflows/
+    └── deploy.yml         # GitHub Actions deployment
+```
+
+## 🔒 Security
+
+- **No credentials in code**: App Key stored locally in browser
+- **OAuth 2.0 + PKCE**: Secure authentication flow
+- **Scoped permissions**: Only necessary Dropbox access
+- **HTTPS only**: GitHub Pages enforces SSL
+
+## 🛠️ Development
+
+### Available Scripts
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+```
+
+### Environment Variables
+Create `.env.local` for development:
+```bash
+# Optional: Override default Vite config
+VITE_APP_TITLE="My Recipe Manager"
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+## 🙏 Acknowledgments
+
+- [Vue.js](https://vuejs.org/) - Progressive JavaScript framework
+- [Dropbox API](https://www.dropbox.com/developers/documentation) - File storage API
+- [Pinia](https://pinia.vuejs.org/) - Vue state management
+- [Vite](https://vitejs.dev/) - Fast build tool
 ```
 docker-compose exec vue-app npm run build
 ```
