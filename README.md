@@ -95,10 +95,6 @@ src/
 ├── App.vue                 # Main application component
 └── main.js                 # Vue app entry point
 
-public/
-├── 404.html               # SPA routing for GitHub Pages
-└── favicon.ico
-
 .github/
 └── workflows/
     └── deploy.yml         # GitHub Actions deployment
@@ -126,18 +122,6 @@ Create `.env.local` for development:
 # Optional: Override default Vite config
 VITE_APP_TITLE="My Recipe Manager"
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - see LICENSE file for details
 
 ## 🙏 Acknowledgments
 
