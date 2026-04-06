@@ -227,15 +227,17 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   // Delete a recipe
-  async function deleteRecipe(fileId) {
+  async function deleteRecipe(fileIdOrPath) {
     isLoading.value = true
     error.value = null
 
     try {
-      await dropbox.deleteRecipe(fileId)
+      await dropbox.deleteRecipe(fileIdOrPath)
       
-      // Remove from local state
-      recipes.value = recipes.value.filter(r => r.id !== fileId)
+      // Remove from local state by either ID or path
+      recipes.value = recipes.value.filter(
+        r => r.id !== fileIdOrPath && r.path !== fileIdOrPath
+      )
       
       // Invalidate cache and full sync (file list changed)
       lastSyncTime.value = null
