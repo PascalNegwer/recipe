@@ -68,12 +68,12 @@ function goToSetup() {
     <h1>Recipe Library</h1>
 
     <div class="header">
-      <button @click="goToNewRecipe">➕ New Recipe</button>
+      <button @click="goToNewRecipe">+ New Recipe</button>
       <button @click="syncRecipes" :disabled="store.isSyncing">
-        {{ store.isSyncing ? '⏳ Syncing...' : '🔄 Sync Dropbox' }}
+        {{ store.isSyncing ? '⧖ Syncing...' : '🗘 Sync Dropbox' }}
       </button>
-      <button @click="clearCache" class="cache-btn">🗑️ Clear Cache</button>
-      <button @click="goToSetup" class="logout-btn">⚙️ Setup</button>
+      <button @click="clearCache" class="cache-btn">🗑 Clear Cache</button>
+      <button @click="goToSetup" class="logout-btn">⚙ Setup</button>
     </div>
 
     <div v-if="pageError" class="error-message">
@@ -99,7 +99,7 @@ function goToSetup() {
       </div>
 
       <div v-else class="recipes-list">
-        <div v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-card">
+        <div v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-card" @click="viewRecipe(recipe)">
           <div class="recipe-info">
             <h3>{{ recipe.name }}</h3>
             <div v-if="recipe.tags?.length" class="recipe-tags">
@@ -107,10 +107,9 @@ function goToSetup() {
             </div>
             <p class="recipe-date">Modified: {{ new Date(recipe.modifiedTime).toLocaleString() }}</p>
           </div>
-          <div class="recipe-actions">
-            <button @click="viewRecipe(recipe)" class="btn-load">View</button>
-            <button @click="editRecipe(recipe)" class="btn-load">Edit</button>
-            <button @click="deleteRecipe(recipe)" class="btn-delete">Delete</button>
+          <div class="recipe-actions" @click.stop>
+            <button @click="editRecipe(recipe)" class="btn-load" title="Edit">🖉</button>
+            <button @click="deleteRecipe(recipe)" class="btn-delete" title="Delete">🗑</button>
           </div>
         </div>
       </div>

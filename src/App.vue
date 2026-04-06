@@ -12,11 +12,34 @@ dropboxAPI.initializeFromStorage()
 </template>
 
 <style>
+:root {
+  --primary: #5a9acc;
+  --primary-dark: #4a7fb5;
+  --accent: #7cb9e8;
+  --success: #4cab9a;
+  --danger: #c9605b;
+  --warning: #d9956f;
+  --bg-dark: #3d4f62;
+  --bg-darker: #2d3e4f;
+  --text-light: #e8eef5;
+  --text-muted: #b0c0d0;
+}
+
+html {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
+  min-height: 100vh;
+}
+
+body {
+  background: transparent;
+}
+
 .container {
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-light);
 }
 
 .app-nav {
@@ -27,7 +50,7 @@ dropboxAPI.initializeFromStorage()
 }
 
 .app-nav a {
-  color: #667eea;
+  color: var(--accent);
   font-weight: 700;
   text-decoration: none;
   border: 2px solid transparent;
@@ -38,37 +61,38 @@ dropboxAPI.initializeFromStorage()
 
 .app-nav a.router-link-active,
 .app-nav a:hover {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.08);
+  border-color: transparent;
+  background: rgba(90, 154, 172, 0.2);
 }
 
 h1 {
-  color: #333;
+  color: var(--text-light);
   text-align: center;
   margin-bottom: 30px;
   font-size: 2.5em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 h2 {
-  color: #555;
+  color: var(--accent);
   font-size: 1.5em;
   margin-bottom: 20px;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid rgba(124, 185, 232, 0.3);
   padding-bottom: 10px;
 }
 
 /* Auth Section */
 .auth-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   padding: 40px;
   border-radius: 10px;
-  color: white;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  color: var(--text-light);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 .auth-section h2 {
-  color: white;
-  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--text-light);
+  border-color: rgba(255, 255, 255, 0.2);
   margin-top: 0;
 }
 
@@ -76,12 +100,14 @@ h2 {
   font-size: 0.95em;
   line-height: 1.6;
   margin-bottom: 10px;
+  color: rgba(232, 238, 245, 0.9);
 }
 
 .auth-section ol {
   margin-left: 20px;
   line-height: 1.8;
   margin-bottom: 20px;
+  color: rgba(232, 238, 245, 0.9);
 }
 
 .auth-section a {
@@ -101,13 +127,15 @@ h2 {
   border: none;
   border-radius: 5px;
   font-size: 1em;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
 }
 
 .auth-section button {
   width: 100%;
   padding: 12px;
-  background: #ffd700;
-  color: #333;
+  background: #c9a96e;
+  color: #2d3e4f;
   border: none;
   border-radius: 5px;
   font-weight: bold;
@@ -117,11 +145,11 @@ h2 {
 }
 
 .auth-section button:hover {
-  background: #ffed4e;
+  background: #d4b583;
 }
 
 .auth-section code {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.2);
   padding: 2px 6px;
   border-radius: 3px;
   font-size: 0.9em;
@@ -132,13 +160,13 @@ h2 {
   width: 100%;
   padding: 10px;
   margin-top: 10px;
-  background: #95a5a6;
-  color: white;
+  background: #6b7880;
+  color: var(--text-light);
   font-size: 0.95em;
 }
 
 .auth-section .reset-btn:hover {
-  background: #7f8c8d;
+  background: #7a8890;
 }
 
 /* Main Content */
@@ -176,61 +204,62 @@ h2 {
 }
 
 .logout-btn {
-  background: #ff6b6b;
-  color: white;
+  background: #6b5b5a;
+  color: var(--text-light);
 }
 
 .logout-btn:hover {
-  background: #ff5252;
+  background: #78696a;
   transform: translateY(-2px);
 }
 
 .header button:not(.logout-btn) {
-  background: #667eea;
+  background: #5a7a8f;
   color: white;
 }
 
 .header button:not(.logout-btn):hover:not(:disabled) {
-  background: #5568d3;
+  background: #667a8a;
   transform: translateY(-2px);
 }
 
 .cache-btn {
-  background: #ff9800 !important;
+  background: #7a6e5f !important;
 }
 
 .cache-btn:hover {
-  background: #f57c00 !important;
+  background: #8a7e6f !important;
 }
 
 .header button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .cache-status {
-  color: #27ae60;
+  color: var(--success);
   font-weight: 600;
   font-size: 0.9em;
 }
 
 /* Error Message */
 .error-message {
-  background: #ffe6e6;
-  color: #d32f2f;
+  background: rgba(201, 96, 91, 0.2);
+  color: #ff9d9a;
   padding: 15px;
   border-radius: 5px;
   margin-bottom: 20px;
-  border-left: 4px solid #d32f2f;
+  border-left: 4px solid var(--danger);
 }
 
 /* Form Section */
 .form-section {
-  background: #f9f9f9;
+  background: rgba(45, 62, 79, 0.6);
   padding: 25px;
   border-radius: 8px;
   margin-bottom: 30px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(124, 185, 232, 0.2);
+  backdrop-filter: blur(5px);
 }
 
 .form-group {
@@ -241,7 +270,7 @@ h2 {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #555;
+  color: var(--accent);
   font-size: 0.95em;
 }
 
@@ -249,31 +278,33 @@ h2 {
 .form-group textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid rgba(124, 185, 232, 0.3);
   border-radius: 5px;
   font-family: inherit;
   font-size: 1em;
   transition: border-color 0.2s ease;
   box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-light);
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 154, 172, 0.2);
 }
 
 .form-help {
   display: block;
   margin-top: 4px;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.85em;
   font-style: italic;
 }
 
 .form-section button {
-  background: #27ae60;
+  background: #5a7a8f;
   color: white;
   padding: 12px 30px;
   border: none;
@@ -286,9 +317,8 @@ h2 {
 }
 
 .form-section button:hover:not(:disabled) {
-  background: #229954;
+  background: #667a8a;
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
 }
 
 .form-actions {
@@ -304,20 +334,22 @@ h2 {
 }
 
 .cancel-btn {
-  background: #95a5a6 !important;
+  background: #6b7880 !important;
   color: white;
 }
 
 .cancel-btn:hover {
-  background: #7f8c8d !important;
+  background: #7a8890 !important;
+  color: white;
 }
 
 /* Recipes Section */
 .recipes-section {
-  background: #f9f9f9;
+  background: rgba(45, 62, 79, 0.6);
   padding: 25px;
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid rgba(124, 185, 232, 0.2);
+  backdrop-filter: blur(5px);
 }
 
 .recipes-header {
@@ -331,9 +363,9 @@ h2 {
 
 .recipes-header h2 {
   margin: 0;
-  color: #555;
+  color: var(--accent);
   font-size: 1.5em;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid rgba(124, 185, 232, 0.3);
   padding-bottom: 10px;
   flex: 1;
   min-width: 200px;
@@ -349,21 +381,26 @@ h2 {
 .search-input {
   flex: 1;
   padding: 10px 12px;
-  border: 2px solid #ddd;
+  border: 2px solid rgba(124, 185, 232, 0.3);
   border-radius: 25px;
   font-size: 0.95em;
   transition: all 0.2s ease;
-  background: white;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-light);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 154, 172, 0.2);
 }
 
 .clear-search-btn {
-  background: #ff6b6b;
+  background: #6b5b5a;
   color: white;
   border: none;
   border-radius: 50%;
@@ -379,14 +416,14 @@ h2 {
 }
 
 .clear-search-btn:hover {
-  background: #ff5252;
+  background: #78696a;
   transform: scale(1.1);
 }
 
 .clear-search-link {
   background: none;
   border: none;
-  color: #667eea;
+  color: var(--accent);
   cursor: pointer;
   text-decoration: underline;
   font-size: 0.9em;
@@ -394,13 +431,13 @@ h2 {
 }
 
 .clear-search-link:hover {
-  color: #5568d3;
+  color: var(--text-light);
 }
 
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--text-muted);
   font-size: 1.1em;
 }
 
@@ -410,25 +447,26 @@ h2 {
 }
 
 .recipe-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   padding: 20px;
   border-radius: 5px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .recipe-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .recipe-info h3 {
   margin: 0;
-  color: #333;
+  color: var(--text-light);
   font-size: 1.2em;
 }
 
@@ -440,7 +478,7 @@ h2 {
 }
 
 .tag {
-  background: #667eea;
+  background: var(--primary);
   color: white;
   padding: 4px 8px;
   border-radius: 12px;
@@ -452,13 +490,13 @@ h2 {
 }
 
 .tag:hover {
-  background: #5568d3;
+  background: var(--primary-dark);
   transform: translateY(-1px);
 }
 
 .recipe-date {
   margin: 5px 0 0 0;
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.85em;
 }
 
@@ -479,22 +517,22 @@ h2 {
 }
 
 .btn-load {
-  background: #667eea;
+  background: #5a7a8f;
   color: white;
 }
 
 .btn-load:hover {
-  background: #5568d3;
+  background: #667a8a;
   transform: translateY(-1px);
 }
 
 .btn-delete {
-  background: #ff6b6b;
+  background: #6b5b5a;
   color: white;
 }
 
 .btn-delete:hover {
-  background: #ff5252;
+  background: #78696a;
   transform: translateY(-1px);
 }
 
