@@ -7,9 +7,20 @@ let dropboxClient = null
 
 const REDIRECT_URI = window.location.origin + import.meta.env.BASE_URL + 'oauth/callback'
 
+const STORAGE_KEYS = {
+  CLIENT_ID: 'dropbox_client_id',
+  ACCESS_TOKEN: 'dropbox_access_token',
+  TOKEN_EXPIRES_AT: 'dropbox_access_token_expires_at',
+  REFRESH_TOKEN: 'dropbox_refresh_token',
+  CODE_VERIFIER: 'dropbox_code_verifier'
+}
+
+const DROPBOX_API_BASE = 'https://api.dropboxapi.com/oauth2'
+const DROPBOX_AUTH_BASE = 'https://www.dropbox.com/oauth2'
+
 export function useDropboxAPI() {
   function initializeFromStorage() {
-    const storedClientId = localStorage.getItem('dropbox_client_id')
+    const storedClientId = localStorage.getItem(STORAGE_KEYS.CLIENT_ID)
     if (storedClientId) {
       CLIENT_ID.value = storedClientId
     }
@@ -20,7 +31,7 @@ export function useDropboxAPI() {
       throw new Error('Client ID cannot be empty')
     }
     CLIENT_ID.value = id
-    localStorage.setItem('dropbox_client_id', id)
+    localStorage.setItem(STORAGE_KEYS.CLIENT_ID, id)
   }
 
   function getClientId() {
@@ -29,8 +40,9 @@ export function useDropboxAPI() {
 
   function clearClientId() {
     CLIENT_ID.value = ''
-    localStorage.removeItem('dropbox_client_id')
+    localStorage.removeItem(STORAGE_KEYS.CLIENT_ID)
   }
+
   function initializeClient(token) {
     ACCESS_TOKEN.value = token
     dropboxClient = new Dropbox({
@@ -51,18 +63,25 @@ export function useDropboxAPI() {
     return !!ACCESS_TOKEN.value && !!dropboxClient
   }
 
-  function authenticateWithDropbox(token) {
-    setAccessToken(token)
+  function checkDropboxClient() {
+    if (!dropboxClient) {
+      throw new Error('Dropbox client not initialized. Please authenticate first.')
+    }
+  }
+
+  function getErrorMessage(error) {
+    return error.error?.error_summary || error.message
+  }
+
+  function toUrlSafeBase64(base64String) {
+    return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
   }
 
   // OAuth functions
   function generateCodeVerifier() {
     const array = new Uint8Array(32)
     crypto.getRandomValues(array)
-    return btoa(String.fromCharCode.apply(null, array))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '')
+    return toUrlSafeBase64(btoa(String.fromCharCode.apply(null, array)))
   }
 
   async function generateCodeChallenge(verifier) {
@@ -70,41 +89,35 @@ export function useDropboxAPI() {
     const data = encoder.encode(verifier)
     const digest = await crypto.subtle.digest('SHA-256', data)
     const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)))
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    return toUrlSafeBase64(base64)
   }
 
   async function startOAuth() {
     if (!CLIENT_ID.value) {
       throw new Error('Client ID not set. Please configure your Dropbox App Key first.')
     }
-    
+
     const codeVerifier = generateCodeVerifier()
     const codeChallenge = await generateCodeChallenge(codeVerifier)
-    
-    sessionStorage.setItem('dropbox_code_verifier', codeVerifier)
-    
+
+    sessionStorage.setItem(STORAGE_KEYS.CODE_VERIFIER, codeVerifier)
+
     const params = new URLSearchParams({
       client_id: CLIENT_ID.value,
       response_type: 'code',
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       redirect_uri: REDIRECT_URI,
-      token_access_type : 'offline',
+      token_access_type: 'offline',
       scope: 'files.content.read files.content.write files.metadata.read',
       state: 'dropbox_oauth'
     })
-    
-    const authUrl = `https://www.dropbox.com/oauth2/authorize?${params.toString()}`
-    window.location.href = authUrl
+
+    window.location.href = `${DROPBOX_AUTH_BASE}/authorize?${params.toString()}`
   }
 
-  async function handleOAuthCallback(code) {
-    const codeVerifier = sessionStorage.getItem('dropbox_code_verifier')
-    if (!codeVerifier) {
-      throw new Error('No code verifier found')
-    }
-    
-    const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
+  async function exchangeCodeForToken(code, codeVerifier) {
+    const response = await fetch(`${DROPBOX_API_BASE}/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -117,33 +130,39 @@ export function useDropboxAPI() {
         redirect_uri: REDIRECT_URI
       })
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to exchange code for token')
     }
-    
-    const data = await response.json()
-    const accessToken = data.access_token
-    const expiresIn = data.expires_in
-    const refreshToken = data.refresh_token
-    
-    sessionStorage.removeItem('dropbox_code_verifier')
-    
+
+    return response.json()
+  }
+
+  async function handleOAuthCallback(code) {
+    const codeVerifier = sessionStorage.getItem(STORAGE_KEYS.CODE_VERIFIER)
+    if (!codeVerifier) {
+      throw new Error('No code verifier found')
+    }
+
+    const data = await exchangeCodeForToken(code, codeVerifier)
+    const { access_token: accessToken, expires_in: expiresIn, refresh_token: refreshToken } = data
+
+    sessionStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER)
     setAccessToken(accessToken)
-    localStorage.setItem('dropbox_acess_token', accessToken)
-    localStorage.setItem('dropbox_acess_token_expires_at', Date.now() + expiresIn * 1000)
-    localStorage.setItem('dropbox_refresh_token', refreshToken)
-    
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken)
+    localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, Date.now() + expiresIn * 1000)
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
+
     return accessToken
   }
 
   async function refreshToken() {
-    const refreshTokenValue = localStorage.getItem('dropbox_refresh_token')
+    const refreshTokenValue = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
     if (!refreshTokenValue) {
       throw new Error('No refresh token available')
     }
 
-    const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
+    const response = await fetch(`${DROPBOX_API_BASE}/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -164,15 +183,15 @@ export function useDropboxAPI() {
     const expiresIn = data.expires_in
 
     setAccessToken(accessToken)
-    localStorage.setItem('dropbox_acess_token', accessToken)
-    localStorage.setItem('dropbox_acess_token_expires_at', Date.now() + expiresIn * 1000)
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken)
+    localStorage.setItem(STORAGE_KEYS.TOKEN_EXPIRES_AT, Date.now() + expiresIn * 1000)
 
     return accessToken
   }
 
   async function initializeAuth() {
-    const accessToken = localStorage.getItem('dropbox_acess_token')
-    const accessTokenExpiresAt = localStorage.getItem('dropbox_acess_token_expires_at')
+    const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+    const accessTokenExpiresAt = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRES_AT)
 
     if (!accessToken || !accessTokenExpiresAt) {
       return false
@@ -189,9 +208,9 @@ export function useDropboxAPI() {
       return true
     } catch (refreshError) {
       console.warn('Token refresh failed:', refreshError)
-      localStorage.removeItem('dropbox_acess_token')
-      localStorage.removeItem('dropbox_acess_token_expires_at')
-      localStorage.removeItem('dropbox_refresh_token')
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN)
+      localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRES_AT)
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
       return false
     }
   }
@@ -206,38 +225,31 @@ export function useDropboxAPI() {
     }
   }
 
+  function createRecipeObject(file, recipeData) {
+    return {
+      id: file.id,
+      name: recipeData?.name || file.name.replace('.json', ''),
+      path: file.path_display,
+      modifiedTime: file.server_modified,
+      ingredients: recipeData?.ingredients || '',
+      instructions: recipeData?.instructions || '',
+      tags: recipeData?.tags || [],
+      created: recipeData?.created || file.server_modified
+    }
+  }
+
   async function parseRecipeFromFile(file) {
     try {
       const recipeData = await getRecipe(file.path_display)
-      return {
-        id: file.id,
-        name: recipeData.name || file.name.replace('.json', ''),
-        path: file.path_display,
-        modifiedTime: file.server_modified,
-        ingredients: recipeData.ingredients || '',
-        instructions: recipeData.instructions || '',
-        tags: recipeData.tags || [],
-        created: recipeData.created || file.server_modified
-      }
+      return createRecipeObject(file, recipeData)
     } catch (error) {
       console.warn(`Failed to load recipe ${file.name}:`, error)
-      return {
-        id: file.id,
-        name: file.name.replace('.json', ''),
-        path: file.path_display,
-        modifiedTime: file.server_modified,
-        ingredients: '',
-        instructions: '',
-        tags: [],
-        created: file.server_modified
-      }
+      return createRecipeObject(file, null)
     }
   }
 
   async function listRecipes() {
-    if (!dropboxClient) {
-      throw new Error('Dropbox client not initialized. Please authenticate first.')
-    }
+    checkDropboxClient()
 
     try {
       await ensureRecipesFolder()
@@ -247,17 +259,14 @@ export function useDropboxAPI() {
         entry => entry.name.endsWith('.json') && entry['.tag'] === 'file'
       )
 
-      const recipes = await Promise.all(jsonFiles.map(parseRecipeFromFile))
-      return recipes
+      return await Promise.all(jsonFiles.map(parseRecipeFromFile))
     } catch (error) {
-      throw new Error(`Failed to list recipes: ${error.error?.error_summary || error.message}`)
+      throw new Error(`Failed to list recipes: ${getErrorMessage(error)}`)
     }
   }
 
   async function createRecipe(recipe) {
-    if (!dropboxClient) {
-      throw new Error('Dropbox client not initialized. Please authenticate first.')
-    }
+    checkDropboxClient()
 
     const filename = `${recipe.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.json`
     const path = `/recipes/${filename}`
@@ -272,28 +281,24 @@ export function useDropboxAPI() {
       })
       return response.result.id
     } catch (error) {
-      throw new Error(`Failed to create recipe: ${error.error?.error_summary || error.message}`)
+      throw new Error(`Failed to create recipe: ${getErrorMessage(error)}`)
     }
   }
 
   async function getRecipe(path) {
-    if (!dropboxClient) {
-      throw new Error('Dropbox client not initialized. Please authenticate first.')
-    }
+    checkDropboxClient()
 
     try {
       const response = await dropboxClient.filesDownload({ path })
       const text = await response.result.fileBlob.text()
       return JSON.parse(text)
     } catch (error) {
-      throw new Error(`Failed to get recipe: ${error.error?.error_summary || error.message}`)
+      throw new Error(`Failed to get recipe: ${getErrorMessage(error)}`)
     }
   }
 
   async function updateRecipe(path, recipeData) {
-    if (!dropboxClient) {
-      throw new Error('Dropbox client not initialized. Please authenticate first.')
-    }
+    checkDropboxClient()
 
     try {
       const response = await dropboxClient.filesUpload({
@@ -305,20 +310,18 @@ export function useDropboxAPI() {
       })
       return response.result.id
     } catch (error) {
-      throw new Error(`Failed to update recipe: ${error.error?.error_summary || error.message}`)
+      throw new Error(`Failed to update recipe: ${getErrorMessage(error)}`)
     }
   }
 
   async function deleteRecipe(path) {
-    if (!dropboxClient) {
-      throw new Error('Dropbox client not initialized. Please authenticate first.')
-    }
+    checkDropboxClient()
 
     try {
       await dropboxClient.filesDeleteV2({ path })
       return true
     } catch (error) {
-      throw new Error(`Failed to delete recipe: ${error.error?.error_summary || error.message}`)
+      throw new Error(`Failed to delete recipe: ${getErrorMessage(error)}`)
     }
   }
 
@@ -331,7 +334,6 @@ export function useDropboxAPI() {
     getRecipe,
     updateRecipe,
     deleteRecipe,
-    authenticateWithDropbox,
     startOAuth,
     handleOAuthCallback,
     refreshToken,
