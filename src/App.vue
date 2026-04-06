@@ -8,7 +8,7 @@ const store = useRecipeStore()
 const dropboxAPI = useDropboxAPI()
 const searchQuery = ref('')
 const { filteredRecipes } = useRecipeSearch(searchQuery)
-const appOrigin = window.location.origin
+const appOrigin = window.location.href + import.meta.env.BASE_URL
 
 // Auth state
 const isSignedIn = ref(false)
@@ -175,7 +175,7 @@ function cancelEdit() {
       <ol>
         <li>Visit <a href="https://www.dropbox.com/developers/apps" target="_blank">Dropbox Developers</a></li>
         <li>Create a new app (Scoped App, Full Dropbox)</li>
-        <li>Set redirect URI to: <code>{{ appOrigin }}/oauth/callback</code></li>
+        <li>Set redirect URI to: <code>{{ appOrigin }}oauth/callback</code></li>
         <li>In Permissions tab, enable: files.content.read, files.content.write, files.metadata.read</li>
         <li>Copy your App Key from the Settings tab</li>
       </ol>

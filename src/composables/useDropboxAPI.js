@@ -5,7 +5,7 @@ const ACCESS_TOKEN = ref('')
 const CLIENT_ID = ref('')
 let dropboxClient = null
 
-const REDIRECT_URI = window.location.origin + '/oauth/callback'
+const REDIRECT_URI = window.location.origin + import.meta.env.BASE_URL + 'oauth/callback'
 
 export function useDropboxAPI() {
   function initializeFromStorage() {
