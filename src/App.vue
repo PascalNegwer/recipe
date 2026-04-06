@@ -2,9 +2,12 @@
 import { ref, onMounted } from 'vue'
 import { useRecipeStore } from './stores/recipes'
 import { useDropboxAPI } from './composables/useDropboxAPI'
+import { useRecipeSearch } from './composables/useRecipeSearch'
 
 const store = useRecipeStore()
 const dropboxAPI = useDropboxAPI()
+const searchQuery = ref('')
+const { filteredRecipes } = useRecipeSearch(searchQuery)
 const appOrigin = window.location.origin
 
 // Auth state
@@ -22,13 +25,11 @@ const editingRecipe = ref(null)
 
 onMounted(async () => {
   dropboxAPI.initializeFromStorage()
-  store.initializeStore()
   
   if (dropboxAPI.getClientId()) {
     showClientIdInput.value = false
   }
   
-  // Check for OAuth callback
   const urlParams = new URLSearchParams(window.location.search)
   const code = urlParams.get('code')
   const state = urlParams.get('state')
@@ -38,24 +39,18 @@ onMounted(async () => {
       await dropboxAPI.handleOAuthCallback(code)
       isSignedIn.value = true
       window.history.replaceState({}, document.title, window.location.pathname)
-      await store.syncWithDropbox(true) // Force sync after OAuth
+      await store.initializeStore()
     } catch (err) {
       alert(`OAuth failed: ${err.message}`)
       console.error('OAuth error:', err)
     }
   } else {
-    // Check for stored token
-    const storedToken = localStorage.getItem('dropbox_token')
-    if (storedToken) {
-      dropboxAPI.setAccessToken(storedToken)
-      isSignedIn.value = true
-      // Sync only if needed (first time or 24 hours passed)
-      await store.syncWithDropbox()
-    }
+    const authSuccess = await dropboxAPI.initializeAuth()
+    isSignedIn.value = authSuccess
+    await store.initializeStore()
   }
 })
 
-// Auth functions
 function setClientId() {
   if (!clientIdInput.value.trim()) {
     alert('Please enter your Dropbox App Key')
@@ -82,7 +77,7 @@ async function startOAuth() {
 
 function logout() {
   isSignedIn.value = false
-  localStorage.removeItem('dropbox_token')
+  localStorage.removeItem('dropbox_acess_token')
   store.clearCache()
 }
 
@@ -90,11 +85,10 @@ function resetClientId() {
   dropboxAPI.clearClientId()
   showClientIdInput.value = true
   isSignedIn.value = false
-  localStorage.removeItem('dropbox_token')
+  localStorage.removeItem('dropbox_acess_token')
 }
 
 async function syncRecipes() {
-  // Force a full sync when user clicks the button
   await store.syncWithDropbox(true)
 }
 
@@ -277,17 +271,17 @@ function cancelEdit() {
       <!-- Recipes List -->
       <section class="recipes-section">
         <div class="recipes-header">
-          <h2>📚 Your Recipes ({{ store.filteredRecipes.length }}{{ store.searchQuery ? ` of ${store.recipes.length}` : '' }})</h2>
+          <h2>📚 Your Recipes ({{ filteredRecipes.length }}{{ searchQuery ? ` of ${store.recipes.length}` : '' }})</h2>
           <div class="search-container">
             <input 
-              v-model="store.searchQuery" 
+              v-model="searchQuery" 
               type="text" 
               placeholder="🔍 Search recipes..."
               class="search-input"
             >
             <button 
-              v-if="store.searchQuery" 
-              @click="store.searchQuery = ''" 
+              v-if="searchQuery" 
+              @click="searchQuery = ''" 
               class="clear-search-btn"
               title="Clear search"
             >
@@ -298,13 +292,13 @@ function cancelEdit() {
         <div v-if="store.recipes.length === 0" class="empty-state">
           <p>No recipes yet. Create one above! 👇</p>
         </div>
-        <div v-else-if="store.filteredRecipes.length === 0 && store.searchQuery" class="empty-state">
-          <p>No recipes match "{{ store.searchQuery }}"</p>
-          <button @click="store.searchQuery = ''" class="clear-search-link">Clear search</button>
+        <div v-else-if="filteredRecipes.length === 0 && searchQuery" class="empty-state">
+          <p>No recipes match "{{ searchQuery }}"</p>
+          <button @click="searchQuery = ''" class="clear-search-link">Clear search</button>
         </div>
         <div v-else class="recipes-list">
           <div 
-            v-for="recipe in store.filteredRecipes" 
+            v-for="recipe in filteredRecipes" 
             :key="recipe.id"
             class="recipe-card"
           >
@@ -315,7 +309,7 @@ function cancelEdit() {
                   v-for="tag in recipe.tags" 
                   :key="tag"
                   class="tag"
-                  @click="store.searchQuery = tag"
+                  @click="searchQuery = tag"
                 >
                   #{{ tag }}
                 </span>

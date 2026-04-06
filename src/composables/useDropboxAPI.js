@@ -89,6 +89,7 @@ export function useDropboxAPI() {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
       redirect_uri: REDIRECT_URI,
+      token_access_type : 'offline',
       scope: 'files.content.read files.content.write files.metadata.read',
       state: 'dropbox_oauth'
     })
@@ -122,14 +123,77 @@ export function useDropboxAPI() {
     }
     
     const data = await response.json()
-    const token = data.access_token
+    const accessToken = data.access_token
+    const expiresIn = data.expires_in
+    const refreshToken = data.refresh_token
     
     sessionStorage.removeItem('dropbox_code_verifier')
     
-    setAccessToken(token)
-    localStorage.setItem('dropbox_token', token)
+    setAccessToken(accessToken)
+    localStorage.setItem('dropbox_acess_token', accessToken)
+    localStorage.setItem('dropbox_acess_token_expires_at', Date.now() + expiresIn * 1000)
+    localStorage.setItem('dropbox_refresh_token', refreshToken)
     
-    return token
+    return accessToken
+  }
+
+  async function refreshToken() {
+    const refreshTokenValue = localStorage.getItem('dropbox_refresh_token')
+    if (!refreshTokenValue) {
+      throw new Error('No refresh token available')
+    }
+
+    const response = await fetch('https://api.dropboxapi.com/oauth2/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshTokenValue,
+        client_id: CLIENT_ID.value
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to refresh token')
+    }
+
+    const data = await response.json()
+    const accessToken = data.access_token
+    const expiresIn = data.expires_in
+
+    setAccessToken(accessToken)
+    localStorage.setItem('dropbox_acess_token', accessToken)
+    localStorage.setItem('dropbox_acess_token_expires_at', Date.now() + expiresIn * 1000)
+
+    return accessToken
+  }
+
+  async function initializeAuth() {
+    const accessToken = localStorage.getItem('dropbox_acess_token')
+    const accessTokenExpiresAt = localStorage.getItem('dropbox_acess_token_expires_at')
+
+    if (!accessToken || !accessTokenExpiresAt) {
+      return false
+    }
+
+    const isExpired = Date.now() >= parseInt(accessTokenExpiresAt)
+    if (!isExpired) {
+      setAccessToken(accessToken)
+      return true
+    }
+
+    try {
+      await refreshToken()
+      return true
+    } catch (refreshError) {
+      console.warn('Token refresh failed:', refreshError)
+      localStorage.removeItem('dropbox_acess_token')
+      localStorage.removeItem('dropbox_acess_token_expires_at')
+      localStorage.removeItem('dropbox_refresh_token')
+      return false
+    }
   }
 
   async function ensureRecipesFolder() {
@@ -270,6 +334,8 @@ export function useDropboxAPI() {
     authenticateWithDropbox,
     startOAuth,
     handleOAuthCallback,
+    refreshToken,
+    initializeAuth,
     setClientId,
     getClientId,
     clearClientId,

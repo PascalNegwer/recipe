@@ -16,32 +16,10 @@ export const useRecipeStore = defineStore('recipes', () => {
   const isSyncing = ref(false)
   const isLoading = ref(false)
   const error = ref(null)
-  const searchQuery = ref('')
 
-  // Computed properties
   const isCacheValid = computed(() => {
     if (!lastSyncTime.value) return false
     return Date.now() - lastSyncTime.value < CACHE_DURATION
-  })
-
-  // Filtered recipes based on search query
-  const filteredRecipes = computed(() => {
-    if (!searchQuery.value.trim()) {
-      return recipes.value
-    }
-    
-    const query = searchQuery.value.toLowerCase().trim()
-    return recipes.value.filter(recipe => {
-      // Search in recipe name
-      const nameMatch = recipe.name.toLowerCase().includes(query)
-      
-      // Search in tags
-      const tagsMatch = recipe.tags && recipe.tags.some(tag => 
-        tag.toLowerCase().includes(query)
-      )
-      
-      return nameMatch || tagsMatch
-    })
   })
 
   // Save recipes to localStorage
@@ -81,9 +59,14 @@ export const useRecipeStore = defineStore('recipes', () => {
     }
   }
 
-  // Initialize store - load from cache on startup
-  function initializeStore() {
+  // Initialize store - load from cache and sync if authenticated
+  async function initializeStore() {
     loadFromLocalStorage()
+
+    // Only sync if authenticated (auth handled elsewhere)
+    if (dropbox.isAuthenticated()) {
+      await syncWithDropbox()
+    }
   }
 
   // Check if full sync is needed
@@ -287,11 +270,9 @@ export const useRecipeStore = defineStore('recipes', () => {
     isSyncing,
     isLoading,
     error,
-    searchQuery,
     
     // Computed
     isCacheValid,
-    filteredRecipes,
     
     // Methods
     initializeStore,
