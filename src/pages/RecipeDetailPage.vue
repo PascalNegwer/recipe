@@ -86,6 +86,14 @@ watch([mode, recipePath], async () => {
   await loadCurrentRecipe()
 })
 
+async function deleteRecipe() {
+  if (!confirm('Soll dieses Rezept wirklich gelöscht werden?')) {
+    return
+  }
+
+  await store.deleteRecipe(recipePath.value).then(() => router.replace({ name: 'RecipeList' }))
+}
+
 async function saveRecipe() {
   pageError.value = ''
 
@@ -132,11 +140,12 @@ function switchToEdit() {
 
 <template>
   <div class="container">
-    <h1>{{ title }}</h1>
-
-    <div class="header">
-      <button @click="goBack">← Zurück</button>
-      <button v-if="mode === 'view'" @click="switchToEdit">✏️ Bearbeiten</button>
+    <div class="flex justify-between">
+      <button class="btn btn-primary" @click="goBack">←</button>
+      <div>
+        <button class="btn btn-primary" v-if="mode === 'view'" @click="switchToEdit">🖉</button>
+        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">🗑</button>
+      </div>
     </div>
 
     <div v-if="pageError" class="error-message">

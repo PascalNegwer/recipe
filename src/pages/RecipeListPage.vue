@@ -39,14 +39,6 @@ function editRecipe(recipe) {
   router.push({ name: 'RecipeDetail', params: { mode: 'edit' }, query: { path: recipe.path } })
 }
 
-async function deleteRecipe(recipe) {
-  if (!confirm('Soll dieses Rezept wirklich gelöscht werden?')) {
-    return
-  }
-
-  await store.deleteRecipe(recipe.path)
-}
-
 async function syncRecipes() {
   await store.syncWithDropbox(true)
 }
@@ -69,7 +61,7 @@ function goToSetup() {
       <img src="/logo.png" alt="Logo" width="100px" height="100px"/>
       <button @click="goToNewRecipe">+ Neu</button>
       <button @click="syncRecipes" :disabled="store.isSyncing">
-        {{ store.isSyncing ? '⧖ Syncing...' : '🗘 Sync Dropbox' }}
+        {{ store.isSyncing ? '⧖ Syncing...' : '⟳ Sync Dropbox' }}
       </button>
       <button @click="clearCache" class="cache-btn">🗑 Cache Löschen</button>
       <button @click="goToSetup" class="logout-btn">⚙ Setup</button>
@@ -100,15 +92,10 @@ function goToSetup() {
       <div v-else class="recipes-list">
         <div v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-card" @click="viewRecipe(recipe)">
           <div class="recipe-info">
-            <h3>{{ recipe.name }}</h3>
+            <div class="text-l">{{ recipe.name }}</div>
             <div v-if="recipe.tags?.length" class="recipe-tags">
               <span v-for="tag in recipe.tags" :key="tag" class="tag">#{{ tag }}</span>
             </div>
-            <p class="recipe-date">Modified: {{ new Date(recipe.modifiedTime).toLocaleString() }}</p>
-          </div>
-          <div class="recipe-actions" @click.stop>
-            <button @click="editRecipe(recipe)" class="btn-load" title="Edit">🖉</button>
-            <button @click="deleteRecipe(recipe)" class="btn-delete" title="Delete">🗑</button>
           </div>
         </div>
       </div>
