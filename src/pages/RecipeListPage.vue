@@ -40,7 +40,7 @@ function editRecipe(recipe) {
 }
 
 async function deleteRecipe(recipe) {
-  if (!confirm('Delete this recipe permanently?')) {
+  if (!confirm('Soll dieses Rezept wirklich gelöscht werden?')) {
     return
   }
 
@@ -52,7 +52,7 @@ async function syncRecipes() {
 }
 
 function clearCache() {
-  if (confirm('Clear local cache and reload recipes from Dropbox?')) {
+  if (confirm('Soll der lokale Cache wirklich gelöscht werden um die Rezepte neu von Dropbox zu synchronisieren?')) {
     store.clearCache()
     syncRecipes()
   }
@@ -65,14 +65,13 @@ function goToSetup() {
 
 <template>
   <div class="container">
-    <h1>Recipe Library</h1>
-
     <div class="header">
-      <button @click="goToNewRecipe">+ New Recipe</button>
+      <img src="/logo.png" alt="Logo" width="100px" height="100px"/>
+      <button @click="goToNewRecipe">+ Neu</button>
       <button @click="syncRecipes" :disabled="store.isSyncing">
         {{ store.isSyncing ? '⧖ Syncing...' : '🗘 Sync Dropbox' }}
       </button>
-      <button @click="clearCache" class="cache-btn">🗑 Clear Cache</button>
+      <button @click="clearCache" class="cache-btn">🗑 Cache Löschen</button>
       <button @click="goToSetup" class="logout-btn">⚙ Setup</button>
     </div>
 
@@ -82,20 +81,20 @@ function goToSetup() {
 
     <section class="form-section">
       <div class="recipes-header">
-        <h2>All Recipes</h2>
+        <h2>Alle Rezepte</h2>
         <div class="search-container">
           <input
             v-model="searchQuery"
             type="text"
             class="search-input"
-            placeholder="Search recipes by name or tag"
+            placeholder="Suche"
           />
           <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search-btn">✕</button>
         </div>
       </div>
 
       <div v-if="store.recipes.length === 0" class="empty-state">
-        <p>No recipes found. Create one to get started.</p>
+        <p>Keine Rezepte gefunden. Erstelle jetzt dein erstes Rezept.</p>
       </div>
 
       <div v-else class="recipes-list">

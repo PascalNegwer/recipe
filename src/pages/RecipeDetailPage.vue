@@ -19,9 +19,9 @@ const pageError = ref('')
 const isLoading = ref(false)
 
 const title = computed(() => {
-  if (mode.value === 'new') return '➕ Create Recipe'
-  if (mode.value === 'edit') return '✏️ Edit Recipe'
-  return '📖 View Recipe'
+  if (mode.value === 'new') return '➕ Neues Rezept'
+  if (mode.value === 'edit') return '✏️ Rezept bearbeiten'
+  return '📖'
 })
 
 const isViewMode = computed(() => mode.value === 'view')
@@ -90,7 +90,7 @@ async function saveRecipe() {
   pageError.value = ''
 
   if (!recipeName.value.trim()) {
-    pageError.value = 'Recipe name is required.'
+    pageError.value = 'Der Name des Rezeptes darf nicht leer sein.'
     return
   }
 
@@ -135,8 +135,8 @@ function switchToEdit() {
     <h1>{{ title }}</h1>
 
     <div class="header">
-      <button @click="goBack">← Back to recipes</button>
-      <button v-if="mode === 'view'" @click="switchToEdit">✏️ Edit Recipe</button>
+      <button @click="goBack">← Zurück</button>
+      <button v-if="mode === 'view'" @click="switchToEdit">✏️ Bearbeiten</button>
     </div>
 
     <div v-if="pageError" class="error-message">
@@ -146,28 +146,28 @@ function switchToEdit() {
     <section class="form-section" v-if="mode === 'new' || mode === 'edit' || mode === 'view'">
       <form @submit.prevent="saveRecipe">
         <div class="form-group">
-          <label for="name">Recipe Name</label>
+          <label for="name">Name</label>
           <input id="name" v-model="recipeName" :disabled="isViewMode" />
         </div>
 
         <div class="form-group">
-          <label for="ingredients">Ingredients</label>
+          <label for="ingredients">Zutaten</label>
           <textarea id="ingredients" v-model="ingredients" rows="6" :disabled="isViewMode"></textarea>
         </div>
 
         <div class="form-group">
-          <label for="instructions">Instructions</label>
+          <label for="instructions">Notizen</label>
           <textarea id="instructions" v-model="instructions" rows="6" :disabled="isViewMode"></textarea>
         </div>
 
         <div class="form-group">
-          <label for="tags">Tags (comma-separated)</label>
+          <label for="tags">Tags (Mehrere mit Komma getrennt, z.B.: Brot, Kuchen, Pasta)</label>
           <input id="tags" v-model="tags" :disabled="isViewMode" />
         </div>
 
         <div class="form-actions" v-if="!isViewMode">
           <button type="submit" :disabled="isLoading">
-            {{ isLoading ? '⏳ Saving...' : (mode === 'new' ? '💾 Create Recipe' : '💾 Update Recipe') }}
+            {{ isLoading ? '⏳' : '💾 Speichern' }}
           </button>
         </div>
       </form>
