@@ -7,29 +7,9 @@ import { useDropboxAPI } from '../composables/useDropboxAPI'
 
 const router = useRouter()
 const store = useRecipeStore()
-const dropboxAPI = useDropboxAPI()
 const searchQuery = ref('')
 const { filteredRecipes } = useRecipeSearch(searchQuery)
 const pageError = ref('')
-
-onMounted(async () => {
-  dropboxAPI.initializeFromStorage()
-
-  if (!dropboxAPI.getClientId()) {
-    return router.replace({ name: 'Setup' })
-  }
-
-  const authenticated = await dropboxAPI.initializeAuth()
-  if (!authenticated) {
-    pageError.value = 'You are not yet connected to Dropbox. Please authorize the app from the setup page.'
-  }
-
-  await store.initializeStore()
-})
-
-function goToNewRecipe() {
-  router.push({ name: 'RecipeNew' })
-}
 
 function viewRecipe(recipe) {
   router.push({ name: 'RecipeDetail', params: { mode: 'view' }, query: { path: recipe.path } })
@@ -38,34 +18,10 @@ function viewRecipe(recipe) {
 function editRecipe(recipe) {
   router.push({ name: 'RecipeDetail', params: { mode: 'edit' }, query: { path: recipe.path } })
 }
-
-async function syncRecipes() {
-  await store.syncWithDropbox(true)
-}
-
-function clearCache() {
-  if (confirm('Soll der lokale Cache wirklich gelöscht werden um die Rezepte neu von Dropbox zu synchronisieren?')) {
-    store.clearCache()
-    syncRecipes()
-  }
-}
-
-function goToSetup() {
-  router.push({ name: 'Setup' })
-}
 </script>
 
 <template>
   <div class="container">
-    <div class="header">
-      <img src="/logo.png" alt="Logo" width="100px" height="100px"/>
-      <button @click="goToNewRecipe">+ Neu</button>
-      <button @click="syncRecipes" :disabled="store.isSyncing">
-        {{ store.isSyncing ? '⧖ Syncing...' : '⟳ Sync Dropbox' }}
-      </button>
-      <button @click="clearCache" class="cache-btn">🗑 Cache Löschen</button>
-      <button @click="goToSetup" class="logout-btn">⚙ Setup</button>
-    </div>
 
     <div v-if="pageError" class="error-message">
       {{ pageError }}
@@ -73,7 +29,6 @@ function goToSetup() {
 
     <section class="form-section">
       <div class="recipes-header">
-        <h2>Alle Rezepte</h2>
         <div class="search-container">
           <input
             v-model="searchQuery"

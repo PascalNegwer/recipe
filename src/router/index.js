@@ -11,7 +11,7 @@ dropboxAPI.initializeFromStorage()
 const routes = [
   { path: '/', redirect: '/recipes' },
   { path: '/setup', name: 'Setup', component: SetupPage },
-  { path: '/recipes', name: 'RecipeList', component: RecipeListPage },
+  { path: '/recipes', name: 'RecipeList', component: RecipeListPage, meta: {nameDe: 'Rezepte'} },
   { path: '/recipes/new', name: 'RecipeNew', component: RecipeDetailPage },
   {
     path: '/recipes/:mode',
@@ -36,7 +36,6 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    console.log('Navigating to:', to.name)
   if (to.name === 'Setup' || to.name === 'OAuthCallback') {
     return next()
   }
