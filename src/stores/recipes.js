@@ -88,16 +88,13 @@ export const useRecipeStore = defineStore('recipes', () => {
     error.value = null
 
     try {
-      const files = await dropbox.listRecipes()
-      recipes.value = files
+      recipes.value = await dropbox.listRecipes()
       lastSyncTime.value = Date.now()
       lastFullSyncTime.value = Date.now()
       saveToLocalStorage()
-      return files
     } catch (err) {
       error.value = `Failed to sync recipes: ${err.message}`
       console.error('Sync error:', err)
-      return recipes.value
     } finally {
       isSyncing.value = false
     }
@@ -165,15 +162,14 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   // Load a specific recipe (and sync it)
-  async function loadRecipe(fileId) {
+  async function loadRecipe(id) {
     isLoading.value = true
     error.value = null
 
     try {
-      const recipe = await dropbox.getRecipe(fileId)
+      const recipe = await dropbox.getRecipe(id)
       
-      // Update in local array
-      const index = recipes.value.findIndex(r => r.path === fileId)
+      const index = recipes.value.findIndex(recipe => recipe.id === id)
       if (index >= 0) {
         recipes.value[index] = { ...recipes.value[index], ...recipe }
         saveToLocalStorage()

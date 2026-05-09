@@ -238,16 +238,6 @@ export function useDropboxAPI() {
     }
   }
 
-  async function parseRecipeFromFile(file) {
-    try {
-      const recipeData = await getRecipe(file.path_display)
-      return createRecipeObject(file, recipeData)
-    } catch (error) {
-      console.warn(`Failed to load recipe ${file.name}:`, error)
-      return createRecipeObject(file, null)
-    }
-  }
-
   async function listRecipes() {
     checkDropboxClient()
 
@@ -259,7 +249,7 @@ export function useDropboxAPI() {
         entry => entry.name.endsWith('.json') && entry['.tag'] === 'file'
       )
 
-      return await Promise.all(jsonFiles.map(parseRecipeFromFile))
+      return await Promise.all(jsonFiles.map((file) => getRecipeByPath(file.path_lower)))
     } catch (error) {
       throw new Error(`Failed to list recipes: ${getErrorMessage(error)}`)
     }
@@ -285,15 +275,19 @@ export function useDropboxAPI() {
     }
   }
 
-  async function getRecipe(path) {
+  async function getRecipeById(id) {
+    return getRecipeByPath(`/recipes/${id}.json`)
+  }
+
+  async function getRecipeByPath(path) {
     checkDropboxClient()
 
     try {
-      const response = await dropboxClient.filesDownload({ path })
+      const response = await dropboxClient.filesDownload({ path: path })
       const text = await response.result.fileBlob.text()
       return JSON.parse(text)
     } catch (error) {
-      throw new Error(`Failed to get recipe: ${getErrorMessage(error)}`)
+      throw new Error(`Failed to get recipe by path ${path}: ${getErrorMessage(error)}`)
     }
   }
 
@@ -331,7 +325,7 @@ export function useDropboxAPI() {
     isAuthenticated,
     listRecipes,
     createRecipe,
-    getRecipe,
+    getRecipe: getRecipeById,
     updateRecipe,
     deleteRecipe,
     startOAuth,

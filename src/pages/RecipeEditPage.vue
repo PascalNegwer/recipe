@@ -1,0 +1,215 @@
+<script setup>
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useRecipeStore } from '../stores/recipes'
+import { useDropboxAPI } from '../composables/useDropboxAPI'
+
+const route = useRoute()
+const router = useRouter()
+const store = useRecipeStore()
+const dropboxAPI = useDropboxAPI()
+
+const mode = computed(() => route.params.mode || 'new')
+const recipePath = computed(() => route.query.path || '')
+const recipeName = ref('')
+const ingredients = ref([])
+const instructions = ref('')
+const tags = ref('')
+const pageError = ref('')
+const isLoading = ref(false)
+
+const title = computed(() => {
+  if (mode.value === 'new') return '➕ Neues Rezept'
+  if (mode.value === 'edit') return '✏️ Rezept bearbeiten'
+  return '📖'
+})
+
+const isViewMode = computed(() => mode.value === 'view')
+
+function resetFields() {
+  recipeName.value = ''
+  ingredients.value = []
+  instructions.value = ''
+  tags.value = ''
+  pageError.value = ''
+}
+
+async function loadCurrentRecipe() {
+  if (mode.value === 'new') {
+    resetFields()
+    return
+  }
+
+  if (!recipePath.value) {
+    return router.replace({ name: 'RecipeList' })
+  }
+
+  isLoading.value = true
+  pageError.value = ''
+
+  try {
+    const recipe = await store.loadRecipe(recipePath.value)
+    if (recipe) {
+      recipeName.value = recipe.name
+      ingredients.value = recipe.ingredients || []
+      instructions.value = recipe.instructions || ''
+      tags.value = recipe.tags?.join(', ') || ''
+    }
+  } catch (err) {
+    pageError.value = err.message || 'Could not load recipe details.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  dropboxAPI.initializeFromStorage()
+
+  if (!dropboxAPI.getClientId()) {
+    return router.replace({ name: 'Setup' })
+  }
+
+  const authenticated = await dropboxAPI.initializeAuth()
+  if (!authenticated) {
+    pageError.value = 'Please authorize Dropbox from the setup page before using recipes.'
+  }
+
+  await store.initializeStore()
+  await loadCurrentRecipe()
+})
+
+watch([mode, recipePath], async () => {
+  if (!store.recipes.length) {
+    return
+  }
+
+  await loadCurrentRecipe()
+})
+
+async function deleteRecipe() {
+  if (!confirm('Soll dieses Rezept wirklich gelöscht werden?')) {
+    return
+  }
+
+  await store.deleteRecipe(recipePath.value).then(() => router.replace({ name: 'RecipeList' }))
+}
+
+async function saveRecipe() {
+  pageError.value = ''
+
+  if (!recipeName.value.trim()) {
+    pageError.value = 'Der Name des Rezeptes darf nicht leer sein.'
+    return
+  }
+
+  const tagList = tags.value
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0)
+
+  isLoading.value = true
+
+  try {
+    if (mode.value === 'new') {
+      await store.addRecipe(recipeName.value, ingredients.value, instructions.value, tagList)
+    } else if (mode.value === 'edit') {
+      await store.updateRecipe(recipePath.value, {
+        name: recipeName.value,
+        ingredients: ingredients.value,
+        instructions: instructions.value,
+        tags: tagList
+      })
+    }
+
+    router.push({ name: 'RecipeList' })
+  } catch (err) {
+    pageError.value = err.message || 'Could not save the recipe.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+function goBack() {
+  router.push({ name: 'RecipeList' })
+}
+
+function switchToEdit() {
+  router.push({ name: 'RecipeDetail', params: { mode: 'edit' }, query: { path: recipePath.value } })
+}
+</script>
+
+<template>
+  <div class="container">
+    <div class="flex justify-between">
+      <button class="btn btn-primary" @click="goBack">←</button>
+      <div>
+        <button class="btn btn-primary" v-if="mode === 'view'" @click="switchToEdit"><i class="fa-solid fa-pencil"></i></button>
+        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">🗑</button>
+      </div>
+    </div>
+
+    <div v-if="pageError" class="error-message">
+      {{ pageError }}
+    </div>
+
+    <section class="form-section" v-if="mode === 'new' || mode === 'edit' || mode === 'view'">
+      <form @submit.prevent="saveRecipe">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input id="name" v-model="recipeName" :disabled="isViewMode" />
+        </div>
+
+        <div class="form-group">
+          <div v-for="(ingredient, index) in ingredients" :key="index">
+<!-- Inputs are bound directly to the object properties (ingredient.name, etc.) -->
+            <input 
+              v-model.trim="ingredient.name" 
+              placeholder="e.g., Flour" 
+              @blur="$emit('update:ingredients', { ...ingredients })"
+            />
+
+            <input 
+              type="number" 
+              v-model.number="ingredient.qty" 
+              placeholder="1" 
+              @blur="$emit('update:ingredients', { ...ingredients })"
+            />
+
+            <select v-model="ingredient.metric">
+              <option value="" disabled>Select unit</option>
+              <option value="g">grams (g)</option>
+              <option value="ml">milliliters (ml)</option>
+              <option value="tsp">teaspoons (tsp)</option>
+              <option value="cups">cups</option>
+            </select>
+
+            <!-- Remove button only appears if there is at least one ingredient -->
+            <button 
+              @click="removeIngredient(index)" 
+              class="remove-btn"
+              :disabled="ingredients.length <= 1"
+            >
+              Remove Ingredient
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="instructions">Notizen</label>
+          <textarea id="instructions" v-model="instructions" rows="6" :disabled="isViewMode"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="tags">Tags (Mehrere mit Komma getrennt, z.B.: Brot, Kuchen, Pasta)</label>
+          <input id="tags" v-model="tags" :disabled="isViewMode" />
+        </div>
+
+        <div class="form-actions" v-if="!isViewMode">
+          <button type="submit" :disabled="isLoading">
+            {{ isLoading ? '⏳' : '💾 Speichern' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+</template>

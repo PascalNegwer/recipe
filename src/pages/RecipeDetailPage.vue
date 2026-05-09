@@ -4,57 +4,27 @@ import { useRoute, useRouter } from 'vue-router'
 import { useRecipeStore } from '../stores/recipes'
 import { useDropboxAPI } from '../composables/useDropboxAPI'
 
+const props = defineProps({
+  id: String,
+})
+
 const route = useRoute()
 const router = useRouter()
 const store = useRecipeStore()
 const dropboxAPI = useDropboxAPI()
 
-const mode = computed(() => route.params.mode || 'new')
-const recipePath = computed(() => route.query.path || '')
-const recipeName = ref('')
-const ingredients = ref('')
-const instructions = ref('')
-const tags = ref('')
+const recipe = ref(null)
 const pageError = ref('')
 const isLoading = ref(false)
 
-const title = computed(() => {
-  if (mode.value === 'new') return '➕ Neues Rezept'
-  if (mode.value === 'edit') return '✏️ Rezept bearbeiten'
-  return '📖'
-})
-
 const isViewMode = computed(() => mode.value === 'view')
 
-function resetFields() {
-  recipeName.value = ''
-  ingredients.value = ''
-  instructions.value = ''
-  tags.value = ''
-  pageError.value = ''
-}
-
-async function loadCurrentRecipe() {
-  if (mode.value === 'new') {
-    resetFields()
-    return
-  }
-
-  if (!recipePath.value) {
-    return router.replace({ name: 'RecipeList' })
-  }
-
+async function loadRecipe() {
   isLoading.value = true
   pageError.value = ''
 
   try {
-    const recipe = await store.loadRecipe(recipePath.value)
-    if (recipe) {
-      recipeName.value = recipe.name
-      ingredients.value = recipe.ingredients || ''
-      instructions.value = recipe.instructions || ''
-      tags.value = recipe.tags?.join(', ') || ''
-    }
+    recipe.value = await store.loadRecipe(props.id)
   } catch (err) {
     pageError.value = err.message || 'Could not load recipe details.'
   } finally {
@@ -75,15 +45,8 @@ onMounted(async () => {
   }
 
   await store.initializeStore()
-  await loadCurrentRecipe()
-})
-
-watch([mode, recipePath], async () => {
-  if (!store.recipes.length) {
-    return
-  }
-
-  await loadCurrentRecipe()
+  
+  await loadRecipe()  
 })
 
 async function deleteRecipe() {
@@ -93,58 +56,24 @@ async function deleteRecipe() {
 
   await store.deleteRecipe(recipePath.value).then(() => router.replace({ name: 'RecipeList' }))
 }
-
-async function saveRecipe() {
-  pageError.value = ''
-
-  if (!recipeName.value.trim()) {
-    pageError.value = 'Der Name des Rezeptes darf nicht leer sein.'
-    return
-  }
-
-  const tagList = tags.value
-    .split(',')
-    .map(tag => tag.trim())
-    .filter(tag => tag.length > 0)
-
-  isLoading.value = true
-
-  try {
-    if (mode.value === 'new') {
-      await store.addRecipe(recipeName.value, ingredients.value, instructions.value, tagList)
-    } else if (mode.value === 'edit') {
-      await store.updateRecipe(recipePath.value, {
-        name: recipeName.value,
-        ingredients: ingredients.value,
-        instructions: instructions.value,
-        tags: tagList
-      })
-    }
-
-    router.push({ name: 'RecipeList' })
-  } catch (err) {
-    pageError.value = err.message || 'Could not save the recipe.'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-function goBack() {
-  router.push({ name: 'RecipeList' })
-}
-
-function switchToEdit() {
-  router.push({ name: 'RecipeDetail', params: { mode: 'edit' }, query: { path: recipePath.value } })
-}
 </script>
 
 <template>
-  <div class="container">
+  <div v-if="recipe" class="container space-y-4">
     <div class="flex justify-between">
-      <button class="btn btn-primary" @click="goBack">←</button>
-      <div>
-        <button class="btn btn-primary" v-if="mode === 'view'" @click="switchToEdit">🖉</button>
-        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">🗑</button>
+      <RouterLink to="/recipes" class="btn btn-primary">
+        <i class="fa-solid fa-arrow-left"></i>
+      </RouterLink>
+      <div class="flex space-x-2">
+        <RouterLink 
+          :to="{ name: 'RecipeEdit', params: { id: recipe.id } }"
+          class="btn btn-primary"
+        >
+          <i class="fa-solid fa-pencil"></i>
+        </RouterLink>
+        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">
+          <i class="fa-solid fa-trash"></i>
+        </button>
       </div>
     </div>
 
@@ -152,34 +81,27 @@ function switchToEdit() {
       {{ pageError }}
     </div>
 
-    <section class="form-section" v-if="mode === 'new' || mode === 'edit' || mode === 'view'">
-      <form @submit.prevent="saveRecipe">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input id="name" v-model="recipeName" :disabled="isViewMode" />
-        </div>
+    <div class="flex justify-between">
+      <h2>{{ recipe.name }}</h2>
+      <div>Für {{ recipe.portions }} Portionen</div>
+    </div>
 
-        <div class="form-group">
-          <label for="ingredients">Zutaten</label>
-          <textarea id="ingredients" v-model="ingredients" rows="6" :disabled="isViewMode"></textarea>
-        </div>
+    <table class="w-full">
+      <tbody>
+        <tr v-for="(ingredient, index) in recipe.ingredients" :key="index">
+          <td>{{ingredient.name}}</td>
+          <td class="w-[50px] text-right pr-2">{{ingredient.qty}}</td>
+          <td class="w-[50px]">{{ingredient.metric}}</td>
+        </tr>
+      </tbody>
+    </table>
 
-        <div class="form-group">
-          <label for="instructions">Notizen</label>
-          <textarea id="instructions" v-model="instructions" rows="6" :disabled="isViewMode"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="tags">Tags (Mehrere mit Komma getrennt, z.B.: Brot, Kuchen, Pasta)</label>
-          <input id="tags" v-model="tags" :disabled="isViewMode" />
-        </div>
-
-        <div class="form-actions" v-if="!isViewMode">
-          <button type="submit" :disabled="isLoading">
-            {{ isLoading ? '⏳' : '💾 Speichern' }}
-          </button>
-        </div>
-      </form>
-    </section>
+    <div>
+      <h2>Notizen</h2>
+      <pre class="text-wrap">{{ recipe.instructions }}</pre>
+    </div>
+  </div>
+  <div v-else class="flex justify-center items-center h-80">
+    <div class="loader"></div>
   </div>
 </template>

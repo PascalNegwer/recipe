@@ -53,7 +53,7 @@ body {
 }
 
 .container {
-  @apply mx-auto;
+  @apply mx-auto p-2;
 }
 
 .app-nav {
@@ -408,12 +408,6 @@ body {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.recipe-info h3 {
-  margin: 0;
-  color: var(--text-light);
-  font-size: 1.2em;
-}
-
 .recipe-tags {
   margin: 8px 0;
   display: flex;
@@ -450,6 +444,8 @@ body {
 }
 
 .btn {
+  display: block;
+  text-align: center;
   padding: 8px 16px;
   border: none;
   border-radius: 5px;
@@ -460,6 +456,26 @@ body {
   background: #5a7a8f;
   color: white;
   min-width: 70px;
+  min-height: 40px;
+}
+
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: 60px;
+  aspect-ratio: 2;
+  --_g: no-repeat radial-gradient(circle closest-side,var(--text-light) 90%,#0000);
+  background: 
+    var(--_g) 0%   50%,
+    var(--_g) 50%  50%,
+    var(--_g) 100% 50%;
+  background-size: calc(100%/3) 50%;
+  animation: l3 1s infinite linear;
+}
+@keyframes l3 {
+    20%{background-position:0%   0%, 50%  50%,100%  50%}
+    40%{background-position:0% 100%, 50%   0%,100%  50%}
+    60%{background-position:0%  50%, 50% 100%,100%   0%}
+    80%{background-position:0%  50%, 50%  50%,100% 100%}
 }
 
 .btn:hover {

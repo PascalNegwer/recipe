@@ -11,13 +11,6 @@ const searchQuery = ref('')
 const { filteredRecipes } = useRecipeSearch(searchQuery)
 const pageError = ref('')
 
-function viewRecipe(recipe) {
-  router.push({ name: 'RecipeDetail', params: { mode: 'view' }, query: { path: recipe.path } })
-}
-
-function editRecipe(recipe) {
-  router.push({ name: 'RecipeDetail', params: { mode: 'edit' }, query: { path: recipe.path } })
-}
 </script>
 
 <template>
@@ -45,14 +38,17 @@ function editRecipe(recipe) {
       </div>
 
       <div v-else class="recipes-list">
-        <div v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-card" @click="viewRecipe(recipe)">
-          <div class="recipe-info">
-            <div class="text-l">{{ recipe.name }}</div>
-            <div v-if="recipe.tags?.length" class="recipe-tags">
-              <span v-for="tag in recipe.tags" :key="tag" class="tag">#{{ tag }}</span>
-            </div>
+        <RouterLink
+          :to="{ name: 'RecipeDetail', params: { id: recipe.id } }"
+          v-for="recipe in filteredRecipes"
+          :key="recipe.id"
+          class="recipe-card"
+        >
+          <div class="text-l">{{ recipe.name }}</div>
+          <div v-if="recipe.tags?.length" class="recipe-tags">
+            <span v-for="tag in recipe.tags" :key="tag" class="tag">#{{ tag }}</span>
           </div>
-        </div>
+        </RouterLink>
       </div>
     </section>
   </div>

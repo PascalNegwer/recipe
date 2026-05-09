@@ -46,7 +46,12 @@ function clearCache() {
         @click="open = !open"
         class="p-2 pl-4"
       >
-        {{ open ? 'X' : '[|||]' }}
+        <span v-if="open">
+          <i class="fa-solid fa-x"></i>
+        </span>
+        <span v-else>
+          <i class="fa-solid fa-bars"></i>
+        </span>
       </button>
     </div>
   </div>
