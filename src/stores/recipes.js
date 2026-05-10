@@ -88,31 +88,28 @@ export const useRecipeStore = defineStore('recipes', () => {
     error.value = null
 
     try {
-      const files = await dropbox.listRecipes()
-      recipes.value = files
+      recipes.value = await dropbox.listRecipes()
       lastSyncTime.value = Date.now()
       lastFullSyncTime.value = Date.now()
       saveToLocalStorage()
-      return files
     } catch (err) {
       error.value = `Failed to sync recipes: ${err.message}`
       console.error('Sync error:', err)
-      return recipes.value
     } finally {
       isSyncing.value = false
     }
   }
 
   // Sync a single recipe from Dropbox (for immediate updates)
-  async function syncSingleRecipe(path) {
+  async function syncSingleRecipe(id) {
     isLoading.value = true
     error.value = null
 
     try {
-      const recipeData = await dropbox.getRecipe(path)
+      const recipeData = await dropbox.getRecipe(id)
       
       // Find and update in local array
-      const index = recipes.value.findIndex(r => r.path === path)
+      const index = recipes.value.findIndex(r => r.id === id)
       if (index >= 0) {
         recipes.value[index] = { ...recipes.value[index], ...recipeData }
         saveToLocalStorage()
@@ -129,35 +126,26 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   // Save a new recipe to Dropbox
-  async function addRecipe(recipeName, ingredients, instructions, tags = []) {
-    if (!recipeName.trim()) {
-      error.value = 'Recipe name is required'
-      return null
+  async function addRecipe(recipe) {
+    if (!dropbox) {
+      throw new Error('Dropbox not initialized')
     }
 
     isLoading.value = true
     error.value = null
 
     try {
-      const recipe = {
-        name: recipeName,
-        ingredients,
-        instructions,
-        tags: tags.filter(tag => tag.trim().length > 0),
-        created: new Date().toISOString()
-      }
+      recipe.id = Date.now()
+      recipe.created = new Date().toISOString()
+      recipe.modified = new Date().toISOString()
 
-      const fileId = await dropbox.createRecipe(recipe)
+      const result = await dropbox.createRecipe(recipe)
+      await syncSingleRecipe(recipe.id)
       
-      // Invalidate cache and sync all recipes (new file added)
-      lastSyncTime.value = null
-      lastFullSyncTime.value = null
-      await syncWithDropbox(true)
-      
-      return fileId
+      return recipe
     } catch (err) {
-      error.value = `Failed to save recipe: ${err.message}`
-      console.error('Save error:', err)
+      error.value = `Failed to update recipe: ${err.message}`
+      console.error('Update error:', err)
       return null
     } finally {
       isLoading.value = false
@@ -165,15 +153,14 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   // Load a specific recipe (and sync it)
-  async function loadRecipe(fileId) {
+  async function loadRecipe(id) {
     isLoading.value = true
     error.value = null
 
     try {
-      const recipe = await dropbox.getRecipe(fileId)
+      const recipe = await dropbox.getRecipe(id)
       
-      // Update in local array
-      const index = recipes.value.findIndex(r => r.path === fileId)
+      const index = recipes.value.findIndex(recipe => recipe.id === id)
       if (index >= 0) {
         recipes.value[index] = { ...recipes.value[index], ...recipe }
         saveToLocalStorage()
@@ -190,7 +177,7 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   // Update an existing recipe
-  async function updateRecipe(path, recipeData) {
+  async function updateRecipe(recipe) {
     if (!dropbox) {
       throw new Error('Dropbox not initialized')
     }
@@ -199,24 +186,15 @@ export const useRecipeStore = defineStore('recipes', () => {
     error.value = null
 
     try {
-      // Get existing recipe data to preserve created date
-      const existingRecipe = await dropbox.getRecipe(path)
-      
-      // Merge with updated data
-      const updatedRecipe = {
-        ...existingRecipe,
-        ...recipeData,
-        created: existingRecipe.created,
-        modified: new Date().toISOString()
-      }
+      recipe.modified = new Date().toISOString()
 
       // Update the file in Dropbox
-      const result = await dropbox.updateRecipe(path, updatedRecipe)
+      const result = await dropbox.updateRecipe(recipe)
       
       // Sync only this recipe immediately
-      await syncSingleRecipe(path)
+      await syncSingleRecipe(recipe.id)
       
-      return result
+      return recipe
     } catch (err) {
       error.value = `Failed to update recipe: ${err.message}`
       console.error('Update error:', err)
@@ -227,16 +205,16 @@ export const useRecipeStore = defineStore('recipes', () => {
   }
 
   // Delete a recipe
-  async function deleteRecipe(fileIdOrPath) {
+  async function deleteRecipe(id) {
     isLoading.value = true
     error.value = null
 
     try {
-      await dropbox.deleteRecipe(fileIdOrPath)
+      await dropbox.deleteRecipe(id)
       
       // Remove from local state by either ID or path
       recipes.value = recipes.value.filter(
-        r => r.id !== fileIdOrPath && r.path !== fileIdOrPath
+        r => r.id !== id
       )
       
       // Invalidate cache and full sync (file list changed)

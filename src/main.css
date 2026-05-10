@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@import '@vueup/vue-quill/dist/vue-quill.snow.css';
+@import "./css/button.css"; 
+@import "./css/form.css"; 
+@import "./css/loader.css"; 
+@import "./css/typography.css";
+
+:root {
+  --primary: #5a9acc;
+  --primary-dark: #4a7fb5;
+  --accent: #7cb9e8;
+  --success: #4cab9a;
+  --danger: #c9605b;
+  --warning: #d9956f;
+  --bg-dark: #3d4f62;
+  --bg-darker: #2d3e4f;
+  --text-light: #e8eef5;
+  --text-muted: #b0c0d0;
+}
+
+.bg-header {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #364b5f 100%);
+}
+
+.bg-footer {
+  background: linear-gradient(135deg, #334355 0%, var(--bg-darker) 100%);
+}
+
+.bg-darker {
+  background-color: rgb(45, 62, 79);
+}
+
+.border-accent {
+  border-color: var(--accent);
+}
+
+html {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
+}
+
+body {
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text-light);
+}
+
+.container {
+  @apply mx-auto p-2;
+}
+
+.ql-editor ol, .ql-editor ul {
+    padding-left: 0;
+}
+
+hr {
+  grid-column: 1 / -1;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  border-top: 1px solid rgb(229, 231, 235);
+  border-top-color: rgba(124, 185, 232, 0.3);
+  border-bottom-color: rgba(124, 185, 232, 0.3);
+  border-left-color: rgba(124, 185, 232, 0.3);
+  border-right-color: rgba(124, 185, 232, 0.3);
+}
+
+ul {
+    list-style: none;
+    list-style-type: disc;
+    padding-left: 1.5rem;
+}

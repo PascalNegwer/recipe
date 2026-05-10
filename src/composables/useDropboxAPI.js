@@ -238,16 +238,6 @@ export function useDropboxAPI() {
     }
   }
 
-  async function parseRecipeFromFile(file) {
-    try {
-      const recipeData = await getRecipe(file.path_display)
-      return createRecipeObject(file, recipeData)
-    } catch (error) {
-      console.warn(`Failed to load recipe ${file.name}:`, error)
-      return createRecipeObject(file, null)
-    }
-  }
-
   async function listRecipes() {
     checkDropboxClient()
 
@@ -259,7 +249,7 @@ export function useDropboxAPI() {
         entry => entry.name.endsWith('.json') && entry['.tag'] === 'file'
       )
 
-      return await Promise.all(jsonFiles.map(parseRecipeFromFile))
+      return await Promise.all(jsonFiles.map((file) => getRecipeByPath(file.path_lower)))
     } catch (error) {
       throw new Error(`Failed to list recipes: ${getErrorMessage(error)}`)
     }
@@ -268,7 +258,7 @@ export function useDropboxAPI() {
   async function createRecipe(recipe) {
     checkDropboxClient()
 
-    const filename = `${recipe.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.json`
+    const filename = `${recipe.id}.json`
     const path = `/recipes/${filename}`
 
     try {
@@ -285,25 +275,31 @@ export function useDropboxAPI() {
     }
   }
 
-  async function getRecipe(path) {
+  async function getRecipeById(id) {
+    return getRecipeByPath(`/recipes/${id}.json`)
+  }
+
+  async function getRecipeByPath(path) {
     checkDropboxClient()
 
     try {
-      const response = await dropboxClient.filesDownload({ path })
+      const response = await dropboxClient.filesDownload({ path: path })
       const text = await response.result.fileBlob.text()
       return JSON.parse(text)
     } catch (error) {
-      throw new Error(`Failed to get recipe: ${getErrorMessage(error)}`)
+      throw new Error(`Failed to get recipe by path ${path}: ${getErrorMessage(error)}`)
     }
   }
 
-  async function updateRecipe(path, recipeData) {
+  async function updateRecipe(recipe) {
     checkDropboxClient()
+
+    const path = `/recipes/${recipe.id}.json`
 
     try {
       const response = await dropboxClient.filesUpload({
         path,
-        contents: JSON.stringify(recipeData, null, 2),
+        contents: JSON.stringify(recipe, null, 2),
         mode: { '.tag': 'overwrite' },
         autorename: false,
         mute: false
@@ -314,8 +310,10 @@ export function useDropboxAPI() {
     }
   }
 
-  async function deleteRecipe(path) {
+  async function deleteRecipe(id) {
     checkDropboxClient()
+
+    const path = `/recipes/${id}.json`
 
     try {
       await dropboxClient.filesDeleteV2({ path })
@@ -331,7 +329,7 @@ export function useDropboxAPI() {
     isAuthenticated,
     listRecipes,
     createRecipe,
-    getRecipe,
+    getRecipe: getRecipeById,
     updateRecipe,
     deleteRecipe,
     startOAuth,
