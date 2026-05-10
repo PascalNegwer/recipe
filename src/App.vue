@@ -36,7 +36,7 @@ function clearCache() {
 </script>
 
 <template>
-  <div class="fixed z-10 w-full bg-dark">
+  <div class="fixed z-10 w-full bg-header">
     <div class="grid grid-cols-3 pt-4 pb-2 container">
       <div></div>
       <div class="justify-self-center">

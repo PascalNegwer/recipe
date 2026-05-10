@@ -18,8 +18,12 @@
   --text-muted: #b0c0d0;
 }
 
-.bg-dark {
-  background: linear-gradient(135deg, var(--bg-dark) 0%, #33475a 100%);
+.bg-header {
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #364b5f 100%);
+}
+
+.bg-footer {
+  background: linear-gradient(135deg, #334355 0%, var(--bg-darker) 100%);
 }
 
 .bg-darker {

@@ -23,7 +23,9 @@ async function loadRecipe() {
   pageError.value = ''
 
   if (!props.id || props.id === 'new ') {
-    recipe.value = {}
+    recipe.value = {
+      portions: 1,
+    }
 
     return
   }
@@ -101,7 +103,7 @@ async function saveRecipe() {
         <FaIcon icon="fa-arrow-left"/>
       </RouterLink>
       <div class="flex space-x-2">
-        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">
+        <button v-if="id" class="btn btn-danger" @click="deleteRecipe(recipe)" title="Löschen">
           <FaIcon icon="fa-trash"/>
         </button>
       </div>
@@ -117,7 +119,7 @@ async function saveRecipe() {
     >
       <div>
         <label for="name">Name</label>
-        <input id="name" v-model.trim="recipe.name" />
+        <input id="name" class="w-full" v-model.trim="recipe.name" />
       </div>
 
       <div>
@@ -171,14 +173,13 @@ async function saveRecipe() {
             <option value="kg">kg</option>
             <option value="ml">ml</option>
             <option value="l">l</option>
-            <option value="Stück">Stück</option>
-            <option value="Priese">Priese</option>
-            <option value="Zehe">Zehe</option>
-            <option value="Teelöffel">Teelöffel</option>
-            <option value="Esslöffel">Esslöffel</option>
+            <option value="piece">Stück</option>
+            <option value="pinch">Priese</option>
+            <option value="clove">Zehe</option>
+            <option value="teaspoon">Teelöffel</option>
+            <option value="tablespoon">Esslöffel</option>
           </select>
   
-          <!-- Remove button only appears if there is at least one ingredient -->
           <button 
             type="button"
             @click="recipe.ingredients.splice(index, 1)" 
@@ -201,7 +202,7 @@ async function saveRecipe() {
 
       <div class="form-group">
         <label for="tags">Tags (Mehrere mit Komma getrennt, z.B.: Brot, Kuchen, Pasta)</label>
-        <input type="text" id="tags" v-model.text="recipe.tags" />
+        <input type="text" id="tags" class="w-full" v-model.text="recipe.tags" />
       </div>
 
       <div class="form-actions">

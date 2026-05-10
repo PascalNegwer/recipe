@@ -14,6 +14,7 @@ const store = useRecipeStore()
 const dropboxAPI = useDropboxAPI()
 
 const recipe = ref(null)
+const targetPortions = ref(1)
 const pageError = ref('')
 
 async function loadRecipe() {
@@ -24,6 +25,8 @@ async function loadRecipe() {
   } catch (err) {
     pageError.value = err.message || 'Could not load recipe details.'
   }
+
+  targetPortions.value = recipe.value.portions
 }
 
 onMounted(async () => {
@@ -50,6 +53,18 @@ async function deleteRecipe() {
 
   await store.deleteRecipe(recipe.value.id).then(() => router.replace({ name: 'RecipeList' }))
 }
+
+function getUnit(unit, qty) {
+  switch (unit) { 
+    case 'piece': return 'Stück'
+    case 'pinch': return qty === 1 ? 'Priese' : 'Priesen'
+    case 'clove': return qty === 1 ? 'Zehe' : 'Zehen'
+    case 'teaspoon': return 'Teelöffel'
+    case 'tablespoon': return 'Esslöffel'
+  }
+
+  return unit
+}
 </script>
 
 <template>
@@ -65,7 +80,7 @@ async function deleteRecipe() {
         >
           <FaIcon icon="fa-pencil"/>
         </RouterLink>
-        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">
+        <button class="btn btn-danger" @click="deleteRecipe(recipe)" title="Löschen">
           <FaIcon icon="fa-trash"/>
         </button>
       </div>
@@ -76,16 +91,29 @@ async function deleteRecipe() {
     </div>
 
     <div class="flex justify-between">
-      <h2>{{ recipe.name }}</h2>
-      <div>Für {{ recipe.portions }} Portionen</div>
+      <h2 class="self-center">{{ recipe.name }}</h2>
+      <div>
+        <div class="flex">
+          <button type="button" @click="targetPortions = Math.max(targetPortions - 1, 1)" class="btn btn-primary btn-small">
+            <FaIcon icon="fa-minus"/>
+          </button>
+          <input class="w-15 text-center text-xs" readonly v-model="targetPortions"/>
+          <button type="button" @click="targetPortions = Math.min(targetPortions + 1, 999)" class="btn btn-primary btn-small">
+            <FaIcon icon="fa-plus"/>
+          </button>
+          <span class="ml-2 self-center">
+            Portionen
+          </span>
+        </div>
+      </div>
     </div>
 
     <table class="w-full">
       <tbody>
         <tr v-for="(ingredient, index) in recipe.ingredients" :key="index">
           <td>{{ingredient.name}}</td>
-          <td class="w-[50px] text-right pr-2">{{ingredient.qty}}</td>
-          <td class="w-[50px]">{{ingredient.unit}}</td>
+          <td class="w-[50px] text-right pr-2">{{ingredient.qty / recipe.portions * targetPortions}}</td>
+          <td class="w-[50px]" v-text="getUnit(ingredient.unit, ingredient.qty)"></td>
         </tr>
       </tbody>
     </table>

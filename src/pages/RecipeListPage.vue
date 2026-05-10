@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useRecipeStore } from '../stores/recipes'
 import { useRecipeSearch } from '../composables/useRecipeSearch'
 import { useDropboxAPI } from '../composables/useDropboxAPI'
+import FaIcon from '../components/FaIcon.vue'
 
 const router = useRouter()
 const store = useRecipeStore()
@@ -25,7 +26,7 @@ const pageError = ref('')
           <input
             v-model="searchQuery"
             type="text"
-            class="search-input"
+            class="w-full"
             placeholder="Suche"
           />
           <button v-if="searchQuery" @click="searchQuery = ''" class="clear-search-btn">✕</button>
@@ -41,7 +42,7 @@ const pageError = ref('')
           :to="{ name: 'RecipeDetail', params: { id: recipe.id } }"
           v-for="recipe in filteredRecipes"
           :key="recipe.id"
-          class="rounded-md border-accent border-l-4 p-2 w-full block"
+          class="rounded-md border-accent shadow-md border-l-4 p-2 w-full block"
         >
           <div class="text-l">{{ recipe.name }}</div>
           <div v-if="recipe.tags?.length" class="recipe-tags space-x-2">
@@ -51,6 +52,11 @@ const pageError = ref('')
       </div>
     </section>
 
-    <RouterLink to="/recipes/new">Neues Rezept</RouterLink>
+    <div class="fixed bottom-0 left-0 p-4 w-full bg-footer">
+      <RouterLink to="/recipes/new" class="btn btn-primary">
+        <FaIcon icon="fa-plus"/>
+        Neues Rezept
+      </RouterLink>
+    </div>
   </div>
 </template>
