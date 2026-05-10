@@ -258,7 +258,7 @@ export function useDropboxAPI() {
   async function createRecipe(recipe) {
     checkDropboxClient()
 
-    const filename = `${recipe.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${Date.now()}.json`
+    const filename = `${recipe.id}.json`
     const path = `/recipes/${filename}`
 
     try {
@@ -291,13 +291,15 @@ export function useDropboxAPI() {
     }
   }
 
-  async function updateRecipe(path, recipeData) {
+  async function updateRecipe(recipe) {
     checkDropboxClient()
+
+    const path = `/recipes/${recipe.id}.json`
 
     try {
       const response = await dropboxClient.filesUpload({
         path,
-        contents: JSON.stringify(recipeData, null, 2),
+        contents: JSON.stringify(recipe, null, 2),
         mode: { '.tag': 'overwrite' },
         autorename: false,
         mute: false
@@ -308,8 +310,10 @@ export function useDropboxAPI() {
     }
   }
 
-  async function deleteRecipe(path) {
+  async function deleteRecipe(id) {
     checkDropboxClient()
+
+    const path = `/recipes/${id}.json`
 
     try {
       await dropboxClient.filesDeleteV2({ path })

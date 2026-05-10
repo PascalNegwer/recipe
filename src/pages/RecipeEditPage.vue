@@ -1,64 +1,37 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { matchedRouteKey, useRoute, useRouter } from 'vue-router'
 import { useRecipeStore } from '../stores/recipes'
 import { useDropboxAPI } from '../composables/useDropboxAPI'
+import { QuillEditor } from '@vueup/vue-quill';
+import FaIcon from '../components/FaIcon.vue';
+
+const props = defineProps({
+  id: String,
+})
 
 const route = useRoute()
 const router = useRouter()
 const store = useRecipeStore()
 const dropboxAPI = useDropboxAPI()
 
-const mode = computed(() => route.params.mode || 'new')
-const recipePath = computed(() => route.query.path || '')
-const recipeName = ref('')
-const ingredients = ref([])
-const instructions = ref('')
-const tags = ref('')
+const recipe = ref(null)
 const pageError = ref('')
 const isLoading = ref(false)
 
-const title = computed(() => {
-  if (mode.value === 'new') return '➕ Neues Rezept'
-  if (mode.value === 'edit') return '✏️ Rezept bearbeiten'
-  return '📖'
-})
-
-const isViewMode = computed(() => mode.value === 'view')
-
-function resetFields() {
-  recipeName.value = ''
-  ingredients.value = []
-  instructions.value = ''
-  tags.value = ''
+async function loadRecipe() {
   pageError.value = ''
-}
 
-async function loadCurrentRecipe() {
-  if (mode.value === 'new') {
-    resetFields()
+  if (!props.id || props.id === 'new ') {
+    recipe.value = {}
+
     return
   }
 
-  if (!recipePath.value) {
-    return router.replace({ name: 'RecipeList' })
-  }
-
-  isLoading.value = true
-  pageError.value = ''
-
   try {
-    const recipe = await store.loadRecipe(recipePath.value)
-    if (recipe) {
-      recipeName.value = recipe.name
-      ingredients.value = recipe.ingredients || []
-      instructions.value = recipe.instructions || ''
-      tags.value = recipe.tags?.join(', ') || ''
-    }
+    recipe.value = await store.loadRecipe(props.id)
   } catch (err) {
     pageError.value = err.message || 'Could not load recipe details.'
-  } finally {
-    isLoading.value = false
   }
 }
 
@@ -75,15 +48,8 @@ onMounted(async () => {
   }
 
   await store.initializeStore()
-  await loadCurrentRecipe()
-})
-
-watch([mode, recipePath], async () => {
-  if (!store.recipes.length) {
-    return
-  }
-
-  await loadCurrentRecipe()
+  
+  await loadRecipe()  
 })
 
 async function deleteRecipe() {
@@ -91,60 +57,53 @@ async function deleteRecipe() {
     return
   }
 
-  await store.deleteRecipe(recipePath.value).then(() => router.replace({ name: 'RecipeList' }))
+  await store.deleteRecipe(recipe.value.id).then(() => router.replace({ name: 'RecipeList' }))
 }
 
 async function saveRecipe() {
   pageError.value = ''
 
-  if (!recipeName.value.trim()) {
+  if (!recipe.value.name) {
     pageError.value = 'Der Name des Rezeptes darf nicht leer sein.'
     return
   }
 
-  const tagList = tags.value
-    .split(',')
-    .map(tag => tag.trim())
-    .filter(tag => tag.length > 0)
+  if (typeof recipe.value.tags === 'string') {
+    recipe.value.tags = recipe.value.tags
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+  }
 
   isLoading.value = true
 
   try {
-    if (mode.value === 'new') {
-      await store.addRecipe(recipeName.value, ingredients.value, instructions.value, tagList)
-    } else if (mode.value === 'edit') {
-      await store.updateRecipe(recipePath.value, {
-        name: recipeName.value,
-        ingredients: ingredients.value,
-        instructions: instructions.value,
-        tags: tagList
-      })
+    if (!recipe.value.id) {
+      recipe.value = await store.addRecipe(recipe.value)
+    } else {
+      recipe.value = await store.updateRecipe(recipe.value)
     }
 
-    router.push({ name: 'RecipeList' })
+    router.push({ name: 'RecipeDetail', params: { id: recipe.value.id }})
   } catch (err) {
+    console.error(err)
     pageError.value = err.message || 'Could not save the recipe.'
   } finally {
     isLoading.value = false
   }
 }
-
-function goBack() {
-  router.push({ name: 'RecipeList' })
-}
-
-function switchToEdit() {
-  router.push({ name: 'RecipeDetail', params: { mode: 'edit' }, query: { path: recipePath.value } })
-}
 </script>
 
 <template>
-  <div class="container">
+  <div v-if="recipe && !isLoading" class="container space-y-4">
     <div class="flex justify-between">
-      <button class="btn btn-primary" @click="goBack">←</button>
-      <div>
-        <button class="btn btn-primary" v-if="mode === 'view'" @click="switchToEdit"><i class="fa-solid fa-pencil"></i></button>
-        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">🗑</button>
+      <RouterLink to="/recipes" class="btn btn-primary">
+        <FaIcon icon="fa-arrow-left"/>
+      </RouterLink>
+      <div class="flex space-x-2">
+        <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">
+          <FaIcon icon="fa-trash"/>
+        </button>
       </div>
     </div>
 
@@ -152,64 +111,107 @@ function switchToEdit() {
       {{ pageError }}
     </div>
 
-    <section class="form-section" v-if="mode === 'new' || mode === 'edit' || mode === 'view'">
-      <form @submit.prevent="saveRecipe">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input id="name" v-model="recipeName" :disabled="isViewMode" />
-        </div>
+    <form
+      @submit.prevent="saveRecipe"
+      class="space-y-4"
+    >
+      <div>
+        <label for="name">Name</label>
+        <input id="name" v-model.trim="recipe.name" />
+      </div>
 
-        <div class="form-group">
-          <div v-for="(ingredient, index) in ingredients" :key="index">
-<!-- Inputs are bound directly to the object properties (ingredient.name, etc.) -->
-            <input 
-              v-model.trim="ingredient.name" 
-              placeholder="e.g., Flour" 
-              @blur="$emit('update:ingredients', { ...ingredients })"
-            />
-
-            <input 
-              type="number" 
-              v-model.number="ingredient.qty" 
-              placeholder="1" 
-              @blur="$emit('update:ingredients', { ...ingredients })"
-            />
-
-            <select v-model="ingredient.metric">
-              <option value="" disabled>Select unit</option>
-              <option value="g">grams (g)</option>
-              <option value="ml">milliliters (ml)</option>
-              <option value="tsp">teaspoons (tsp)</option>
-              <option value="cups">cups</option>
-            </select>
-
-            <!-- Remove button only appears if there is at least one ingredient -->
-            <button 
-              @click="removeIngredient(index)" 
-              class="remove-btn"
-              :disabled="ingredients.length <= 1"
-            >
-              Remove Ingredient
-            </button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="instructions">Notizen</label>
-          <textarea id="instructions" v-model="instructions" rows="6" :disabled="isViewMode"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="tags">Tags (Mehrere mit Komma getrennt, z.B.: Brot, Kuchen, Pasta)</label>
-          <input id="tags" v-model="tags" :disabled="isViewMode" />
-        </div>
-
-        <div class="form-actions" v-if="!isViewMode">
-          <button type="submit" :disabled="isLoading">
-            {{ isLoading ? '⏳' : '💾 Speichern' }}
+      <div>
+        <label for="portions">Für wie viele Portionen ist das Rezept ausgelegt?</label>
+        <div class="flex gap-4">
+          <button type="button" @click="recipe.portions = Math.max(recipe.portions - 1, 1)" class="btn btn-primary">
+            <FaIcon icon="fa-minus"/>
+          </button>
+          <input
+            id="portions"
+            v-model.numer="recipe.portions"
+            type="number"
+            step="1"
+            min="1"
+            max="999"
+            required
+            class="flex-1"
+          />
+          <button type="button" @click="recipe.portions = Math.min(recipe.portions + 1, 999)" class="btn btn-primary">
+            <FaIcon icon="fa-plus"/>
           </button>
         </div>
-      </form>
-    </section>
+      </div>
+
+      <label>Zutaten</label>
+      <div
+        v-for="(ingredient, index) in recipe.ingredients"
+        :key="index"
+        class="grid grid-cols-12 gap-4"
+      >
+        <input 
+          v-model.trim="ingredient.name" 
+          placeholder="zB Mehl" 
+          class="col-span-12"
+        />
+
+        <div class="col-span-12 grid grid-cols-12 gap-4">
+          <input 
+            type="number" 
+            v-model.number="ingredient.qty" 
+            placeholder="1" 
+            class="col-span-3"
+          />
+  
+          <select
+            v-model="ingredient.unit"
+            class="col-span-6"
+          >
+            <option value="" disabled>-</option>
+            <option value="g">g</option>
+            <option value="kg">kg</option>
+            <option value="ml">ml</option>
+            <option value="l">l</option>
+            <option value="Stück">Stück</option>
+            <option value="Priese">Priese</option>
+            <option value="Zehe">Zehe</option>
+            <option value="Teelöffel">Teelöffel</option>
+            <option value="Esslöffel">Esslöffel</option>
+          </select>
+  
+          <!-- Remove button only appears if there is at least one ingredient -->
+          <button 
+            type="button"
+            @click="recipe.ingredients.splice(index, 1)" 
+            class="btn btn-danger col-span-3"
+          >
+            <FaIcon icon="fa-trash-can"/>
+          </button>
+        </div>
+
+        <hr/>
+      </div>
+      <button type="button" class="w-full btn btn-primary" @click="recipe.ingredients.push({})">
+        <FaIcon icon="fa-plus-circle"/> Zutat hinzufügen
+      </button>
+
+      <div class="form-group">
+        <label for="instructions">Notizen</label>
+        <QuillEditor v-model:content="recipe.instructions" contentType="html" theme="snow" />
+      </div>
+
+      <div class="form-group">
+        <label for="tags">Tags (Mehrere mit Komma getrennt, z.B.: Brot, Kuchen, Pasta)</label>
+        <input type="text" id="tags" v-model.text="recipe.tags" />
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary w-full" type="submit">
+          <FaIcon icon="fa-save"/> Speichern
+        </button>
+      </div>
+    </form>
+  </div>
+  <div v-else class="flex justify-center items-center h-80">
+    <div class="loader"></div>
   </div>
 </template>

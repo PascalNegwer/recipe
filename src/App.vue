@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useDropboxAPI } from './composables/useDropboxAPI'
 import { useRecipeStore } from './stores/recipes'
+import FaIcon from './components/FaIcon.vue'
 
 const store = useRecipeStore()
 const dropboxAPI = useDropboxAPI()
@@ -35,57 +36,66 @@ function clearCache() {
 </script>
 
 <template>
-  <div class="grid grid-cols-3 mt-4 mb-2 container">
-    <div></div>
-    <div class="justify-self-center">
-      <h1 class="self-center">{{ $route.meta.nameDe }}</h1>
+  <div class="fixed z-10 w-full bg-dark">
+    <div class="grid grid-cols-3 pt-4 pb-2 container">
+      <div></div>
+      <div class="justify-self-center">
+        <h1 class="self-center">{{ $route.meta.nameDe }}</h1>
+      </div>
+  
+      <div class="justify-self-end content-center">
+        <button
+          @click="open = !open"
+          class="p-2 pl-4"
+        >
+          <span v-if="open">
+            <FaIcon icon="fa-x"/>
+          </span>
+          <span v-else>
+            <FaIcon icon="fa-bars"/>
+          </span>
+        </button>
+      </div>
     </div>
-
-    <div class="justify-self-end content-center">
-      <button
-        @click="open = !open"
-        class="p-2 pl-4"
-      >
-        <span v-if="open">
-          <i class="fa-solid fa-x"></i>
-        </span>
-        <span v-else>
-          <i class="fa-solid fa-bars"></i>
-        </span>
-      </button>
-    </div>
-  </div>
-
-  <div class="relative h-full">
     <nav
-      v-if="open" class="absolute z-10 inset-0 bg-darker" 
+      v-if="open" class="h-[100vh] bg-darker" 
       @click="open = false"
     >
       <RouterLink
-        class="block cursor-pointer no-underline text-light m-4"
+        class="block cursor-pointer no-underline text-light p-4"
         to="/recipes"
       >
         Rezepte
       </RouterLink>
       <RouterLink
-        class="block cursor-pointer no-underline text-light m-4"
+        class="block cursor-pointer no-underline text-light p-4"
         to="/setup"
       >
         Setup
       </RouterLink>
       <button
-        class="block cursor-pointer no-underline text-light m-4"
-        @click="syncRecipes" :disabled="store.isSyncing"
+        class="block cursor-pointer no-underline text-light p-4"
+        @click.stop="syncRecipes" :disabled="store.isSyncing"
       >
-        {{ store.isSyncing ? '⧖ Syncing...' : '⟳ Sync Dropbox' }}
+        <span v-if="store.isSyncing">
+          <FaIcon icon="fa-hourglass"/>
+          Synchronisiert...
+        </span>
+        <span v-else>
+          <FaIcon icon="fa-rotate"/>
+          Sync Dropbox
+        </span>
       </button>
       <button
-        class="block cursor-pointer no-underline text-light m-4"
-        @click="clearCache"
+        class="block cursor-pointer no-underline text-light p-4"
+        @click.stop="clearCache"
       >
-        🗑 Cache Löschen
+        <FaIcon icon="fa-trash"/> Cache Löschen
       </button>
     </nav>
+  </div>
+
+  <div class="pt-[56px]">
     <router-view />
   </div>
 </template>

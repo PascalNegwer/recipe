@@ -1,34 +1,28 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { useRecipeStore } from '../stores/recipes'
 import { useDropboxAPI } from '../composables/useDropboxAPI'
+import FaIcon from '../components/FaIcon.vue'
 
 const props = defineProps({
   id: String,
 })
 
-const route = useRoute()
 const router = useRouter()
 const store = useRecipeStore()
 const dropboxAPI = useDropboxAPI()
 
 const recipe = ref(null)
 const pageError = ref('')
-const isLoading = ref(false)
-
-const isViewMode = computed(() => mode.value === 'view')
 
 async function loadRecipe() {
-  isLoading.value = true
   pageError.value = ''
 
   try {
     recipe.value = await store.loadRecipe(props.id)
   } catch (err) {
     pageError.value = err.message || 'Could not load recipe details.'
-  } finally {
-    isLoading.value = false
   }
 }
 
@@ -54,7 +48,7 @@ async function deleteRecipe() {
     return
   }
 
-  await store.deleteRecipe(recipePath.value).then(() => router.replace({ name: 'RecipeList' }))
+  await store.deleteRecipe(recipe.value.id).then(() => router.replace({ name: 'RecipeList' }))
 }
 </script>
 
@@ -62,17 +56,17 @@ async function deleteRecipe() {
   <div v-if="recipe" class="container space-y-4">
     <div class="flex justify-between">
       <RouterLink to="/recipes" class="btn btn-primary">
-        <i class="fa-solid fa-arrow-left"></i>
+        <FaIcon icon="fa-arrow-left"/>
       </RouterLink>
       <div class="flex space-x-2">
         <RouterLink 
           :to="{ name: 'RecipeEdit', params: { id: recipe.id } }"
           class="btn btn-primary"
         >
-          <i class="fa-solid fa-pencil"></i>
+          <FaIcon icon="fa-pencil"/>
         </RouterLink>
         <button class="btn btn-primary" @click="deleteRecipe(recipe)" title="Löschen">
-          <i class="fa-solid fa-trash"></i>
+          <FaIcon icon="fa-trash"/>
         </button>
       </div>
     </div>
@@ -91,14 +85,14 @@ async function deleteRecipe() {
         <tr v-for="(ingredient, index) in recipe.ingredients" :key="index">
           <td>{{ingredient.name}}</td>
           <td class="w-[50px] text-right pr-2">{{ingredient.qty}}</td>
-          <td class="w-[50px]">{{ingredient.metric}}</td>
+          <td class="w-[50px]">{{ingredient.unit}}</td>
         </tr>
       </tbody>
     </table>
 
     <div>
       <h2>Notizen</h2>
-      <pre class="text-wrap">{{ recipe.instructions }}</pre>
+      <div class="text-wrap" v-html="recipe.instructions"></div>
     </div>
   </div>
   <div v-else class="flex justify-center items-center h-80">

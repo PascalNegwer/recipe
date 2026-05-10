@@ -15,12 +15,11 @@ const pageError = ref('')
 
 <template>
   <div class="container">
-
     <div v-if="pageError" class="error-message">
       {{ pageError }}
     </div>
 
-    <section class="form-section">
+    <section class="form-section space-y-2">
       <div class="recipes-header">
         <div class="search-container">
           <input
@@ -37,19 +36,21 @@ const pageError = ref('')
         <p>Keine Rezepte gefunden. Erstelle jetzt dein erstes Rezept.</p>
       </div>
 
-      <div v-else class="recipes-list">
+      <div v-else class="space-y-2">
         <RouterLink
           :to="{ name: 'RecipeDetail', params: { id: recipe.id } }"
           v-for="recipe in filteredRecipes"
           :key="recipe.id"
-          class="recipe-card"
+          class="rounded-md border-accent border-l-4 p-2 w-full block"
         >
           <div class="text-l">{{ recipe.name }}</div>
-          <div v-if="recipe.tags?.length" class="recipe-tags">
+          <div v-if="recipe.tags?.length" class="recipe-tags space-x-2">
             <span v-for="tag in recipe.tags" :key="tag" class="tag">#{{ tag }}</span>
           </div>
         </RouterLink>
       </div>
     </section>
+
+    <RouterLink to="/recipes/new">Neues Rezept</RouterLink>
   </div>
 </template>
