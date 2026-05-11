@@ -112,7 +112,7 @@ function getUnit(unit, qty) {
       <tbody>
         <tr v-for="(ingredient, index) in recipe.ingredients" :key="index">
           <td>{{ingredient.name}}</td>
-          <td class="w-[50px] text-right pr-2">{{ingredient.qty / recipe.portions * targetPortions}}</td>
+          <td class="w-[50px] text-right pr-2">{{new Intl.NumberFormat("de-DE", { maximumSignificantDigits: 2 }).format((ingredient.qty / recipe.portions * targetPortions))}}</td>
           <td class="w-[50px]" v-text="getUnit(ingredient.unit, ingredient.qty)"></td>
         </tr>
       </tbody>

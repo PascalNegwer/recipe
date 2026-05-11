@@ -25,6 +25,7 @@ async function loadRecipe() {
   if (!props.id || props.id === 'new ') {
     recipe.value = {
       portions: 1,
+      ingredients: []
     }
 
     return
