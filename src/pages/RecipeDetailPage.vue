@@ -120,7 +120,7 @@ function getUnit(unit, qty) {
 
     <div>
       <h2>Notizen</h2>
-      <div class="text-wrap" v-html="recipe.instructions"></div>
+      <div class="text-wrap ql-editor-out" v-html="recipe.instructions"></div>
     </div>
   </div>
   <div v-else class="flex justify-center items-center h-80">
