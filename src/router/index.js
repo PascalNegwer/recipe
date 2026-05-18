@@ -5,13 +5,14 @@ import RecipeListPage from '../pages/RecipeListPage.vue'
 import RecipeDetailPage from '../pages/RecipeDetailPage.vue'
 import OAuthCallbackPage from '../pages/OAuthCallbackPage.vue'
 import RecipeEditPage from '../pages/RecipeEditPage.vue'
+import NotesPage from '../pages/NotesPage.vue'
 
 const dropboxAPI = useDropboxAPI()
 dropboxAPI.initializeFromStorage()
 
 const routes = [
   { path: '/', redirect: '/recipes' },
-  { path: '/setup', name: 'Setup', component: SetupPage },
+  { path: '/setup', name: 'Setup', component: SetupPage, meta: {nameDe: 'Setup'} },
   { 
     path: '/recipes',
     meta: {nameDe: 'Rezepte'},
@@ -22,6 +23,7 @@ const routes = [
       { path: ':id/edit', name: 'RecipeEdit', component: RecipeEditPage, props: true },
     ] 
   },
+  { path: '/notes', name: 'Notes', component: NotesPage, meta: {nameDe: 'Notizen'} },
   { path: '/oauth/callback', name: 'OAuthCallback', component: OAuthCallbackPage },
   { path: '/:pathMatch(.*)*', redirect: '/recipes' }
 ]

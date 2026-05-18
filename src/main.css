@@ -3,6 +3,7 @@
 @import "./css/button.css"; 
 @import "./css/form.css"; 
 @import "./css/loader.css"; 
+@import "./css/ql-editor.css";
 @import "./css/typography.css";
 
 :root {
@@ -18,23 +19,15 @@
   --text-muted: #b0c0d0;
 }
 
-.bg-header {
-  background: linear-gradient(135deg, var(--bg-dark) 0%, #364b5f 100%);
-}
-
 .bg-footer {
   background: linear-gradient(135deg, #334355 0%, var(--bg-darker) 100%);
-}
-
-.bg-darker {
-  background-color: rgb(45, 62, 79);
 }
 
 .border-accent {
   border-color: var(--accent);
 }
 
-html {
+.bg-body {
   background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 100%);
 }
 
@@ -61,10 +54,4 @@ hr {
   border-bottom-color: rgba(124, 185, 232, 0.3);
   border-left-color: rgba(124, 185, 232, 0.3);
   border-right-color: rgba(124, 185, 232, 0.3);
-}
-
-ul {
-    list-style: none;
-    list-style-type: disc;
-    padding-left: 1.5rem;
 }

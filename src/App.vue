@@ -36,29 +36,31 @@ function clearCache() {
 </script>
 
 <template>
-  <div class="fixed z-10 w-full bg-header">
-    <div class="grid grid-cols-3 pt-4 pb-2 container">
-      <div></div>
-      <div class="justify-self-center">
-        <h1 class="self-center">{{ $route.meta.nameDe }}</h1>
-      </div>
-  
-      <div class="justify-self-end content-center">
-        <button
-          @click="open = !open"
-          class="p-2 pl-4"
-        >
-          <span v-if="open">
-            <FaIcon icon="fa-x"/>
-          </span>
-          <span v-else>
-            <FaIcon icon="fa-bars"/>
-          </span>
-        </button>
+  <div class="fixed z-10 w-full">
+    <div class="bg-body shadow-lg">
+      <div class="grid grid-cols-3 container">
+        <div></div>
+        <div class="justify-self-center">
+          <h1 class="self-center">{{ $route.meta.nameDe }}</h1>
+        </div>
+    
+        <div class="justify-self-end content-center">
+          <button
+            @click="open = !open"
+            class="p-2 pl-4"
+          >
+            <span v-if="open">
+              <FaIcon icon="fa-x"/>
+            </span>
+            <span v-else>
+              <FaIcon icon="fa-bars"/>
+            </span>
+          </button>
+        </div>
       </div>
     </div>
     <nav
-      v-if="open" class="h-[100vh] bg-darker" 
+      v-if="open" class="h-[100vh] bg-body" 
       @click="open = false"
     >
       <RouterLink
@@ -66,6 +68,12 @@ function clearCache() {
         to="/recipes"
       >
         Rezepte
+      </RouterLink>
+      <RouterLink
+        class="block cursor-pointer no-underline text-light p-4"
+        to="/notes"
+      >
+        Notizen
       </RouterLink>
       <RouterLink
         class="block cursor-pointer no-underline text-light p-4"
